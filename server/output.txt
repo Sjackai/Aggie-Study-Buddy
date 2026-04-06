@@ -1,0 +1,9 @@
+Script started
+Seeding database...
+Created 8 users
+Created 8 sessions
+Added session members
+Added connections
+✅ Database seeded successfully!
+Demo login: sjohnson@aggies.ncat.edu / Demo1234
+Done!
