@@ -1,3 +1,4 @@
+import API_URL from '../config'
 import Toast from '../components/Toast'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -32,7 +33,7 @@ export default function Dashboard() {
 
   const fetchSessions = async (token) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/sessions', {
+      const res = await axios.get(`${API_URL}/api/sessions`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setSessions(res.data)
@@ -51,7 +52,7 @@ export default function Dashboard() {
   const handleJoin = async (sessionId) => {
     const token = localStorage.getItem('token')
     try {
-      await axios.post(`http://localhost:5000/api/sessions/${sessionId}/join`, {}, {
+      await axios.post(`${API_URL}/api/sessions/${sessionId}/join`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
       fetchSessions(token)
@@ -64,7 +65,7 @@ export default function Dashboard() {
   const handleCreateSession = async () => {
     const token = localStorage.getItem('token')
     try {
-      await axios.post('http://localhost:5000/api/sessions', newSession, {
+      await axios.post(`${API_URL}/api/sessions`, newSession, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setShowCreate(false)

@@ -1,3 +1,4 @@
+import API_URL from '../config'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -23,7 +24,7 @@ export default function Partners() {
 
   const fetchPartners = async (token) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/users/partners', {
+      const res = await axios.get(`${API_URL}/api/users/partners`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setPartners(res.data)
@@ -36,7 +37,7 @@ export default function Partners() {
   const handleConnect = async (partnerId, partnerName) => {
     const token = localStorage.getItem('token')
     try {
-      await axios.post('http://localhost:5000/api/connections', { toUserId: partnerId }, {
+      await axios.post(`${API_URL}/api/connections`, { toUserId: partnerId }, {
         headers: { Authorization: `Bearer ${token}` }
       })
       showToast(`Connection request sent to ${partnerName}! 🤝`)
