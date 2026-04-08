@@ -1,3 +1,4 @@
+import Logo from '../components/Logo'
 import API_URL from '../config'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -68,9 +69,7 @@ export default function Partners() {
       {/* Navbar */}
       <nav className="bg-ncat-blue px-8 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-ncat-gold rounded-full flex items-center justify-center">
-            <span className="text-ncat-blue font-bold text-xs">A&T</span>
-          </div>
+          <Logo size={36} />
           <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
         </div>
         <button

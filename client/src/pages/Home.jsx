@@ -1,3 +1,4 @@
+import Logo from '../components/Logo'
 import { Link } from 'react-router-dom'
 
 const stats = [
@@ -236,9 +237,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-ncat-gold rounded-full flex items-center justify-center">
-                <span className="text-ncat-blue font-bold text-xs">A&T</span>
-              </div>
+              <Logo size={48} />
               <span className="text-white font-bold">Aggie StudyBuddy</span>
             </div>
             <p className="text-blue-300 text-sm">© 2026 Aggie StudyBuddy · North Carolina A&T State University</p>

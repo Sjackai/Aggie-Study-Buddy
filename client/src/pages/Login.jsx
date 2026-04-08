@@ -1,3 +1,4 @@
+import Logo from '../components/Logo'
 import API_URL from '../config'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -32,9 +33,7 @@ export default function Login() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-ncat-blue rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-2xl font-bold">A&T</span>
-          </div>
+          <Logo size={36} />
           <h1 className="text-3xl font-bold text-ncat-blue">Welcome Back!</h1>
           <p className="text-gray-500 mt-1">Sign in to Aggie StudyBuddy</p>
         </div>

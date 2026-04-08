@@ -1,3 +1,4 @@
+import Logo from '../components/Logo'
 import CourseSelector from '../components/CourseSelector'
 import Toast from '../components/Toast'
 import { useState, useEffect } from 'react'
@@ -86,20 +87,24 @@ export default function Dashboard() {
       {/* Navbar */}
       <nav className="bg-ncat-blue px-8 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-ncat-gold rounded-full flex items-center justify-center">
-            <span className="text-ncat-blue font-bold text-xs">A&T</span>
-          </div>
+          <Logo size={36} />
           <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-blue-200 text-sm">👋 {user?.name}</span>
-          <button
-            onClick={handleLogout}
-            className="bg-white text-ncat-blue font-semibold text-sm px-4 py-2 rounded-xl hover:opacity-90 transition"
-          >
-            Log Out
-          </button>
-        </div>
+  <span className="text-blue-200 text-sm">👋 {user?.name}</span>
+  <button
+    onClick={() => navigate('/profile')}
+    className="bg-ncat-gold text-ncat-blue font-semibold text-sm px-4 py-2 rounded-xl hover:opacity-90 transition"
+  >
+    👤 Profile
+  </button>
+  <button
+    onClick={handleLogout}
+    className="bg-white text-ncat-blue font-semibold text-sm px-4 py-2 rounded-xl hover:opacity-90 transition"
+  >
+    Log Out
+  </button>
+</div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8">

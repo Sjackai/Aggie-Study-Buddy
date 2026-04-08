@@ -6,12 +6,16 @@ import Dashboard from './pages/Dashboard'
 import Partners from './pages/Partners'
 import FindSessions from './pages/FindSessions'
 import CourseSessions from './pages/CourseSessions'
+import Profile from './pages/Profile'
+
+
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/profile" element={<Profile />} />
         <Route path="/sessions/:courseCode" element={<CourseSessions />} />
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
