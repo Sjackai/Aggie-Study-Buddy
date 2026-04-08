@@ -4,16 +4,21 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Partners from './pages/Partners'
+import FindSessions from './pages/FindSessions'
+import CourseSessions from './pages/CourseSessions'
+
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/sessions/:courseCode" element={<CourseSessions />} />
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/partners" element={<Partners />} />
+        <Route path="/find-sessions" element={<FindSessions />} />
       </Routes>
     </BrowserRouter>
   )

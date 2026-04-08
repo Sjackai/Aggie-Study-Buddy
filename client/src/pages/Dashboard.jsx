@@ -1,16 +1,18 @@
-import API_URL from '../config'
+import CourseSelector from '../components/CourseSelector'
 import Toast from '../components/Toast'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import API_URL from '../config'
 
 export default function Dashboard() {
   const [toast, setToast] = useState(null)
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
-  const [sessions, setSessions] = useState([])
+  const [mySessions, setMySessions] = useState({ upcoming: [], past: [] })
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
+  const [activeTab, setActiveTab] = useState('upcoming')
   const [newSession, setNewSession] = useState({
     courseCode: '', courseName: '', date: '', time: '', location: '', description: '', maxParticipants: 6
   })
@@ -28,15 +30,22 @@ export default function Dashboard() {
       return
     }
     setUser(JSON.parse(stored))
-    fetchSessions(token)
+    fetchMySessions(token, JSON.parse(stored).id)
   }, [])
 
-  const fetchSessions = async (token) => {
+  const fetchMySessions = async (token, userId) => {
     try {
       const res = await axios.get(`${API_URL}/api/sessions`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      setSessions(res.data)
+      const today = new Date().toISOString().split('T')[0]
+      const mine = res.data.filter(s =>
+        s.hostId === userId || s.members?.some(m => m.userId === userId)
+      )
+      setMySessions({
+        upcoming: mine.filter(s => s.date >= today),
+        past: mine.filter(s => s.date < today)
+      })
     } catch (err) {
       console.error(err)
     }
@@ -49,28 +58,16 @@ export default function Dashboard() {
     navigate('/')
   }
 
-  const handleJoin = async (sessionId) => {
-    const token = localStorage.getItem('token')
-    try {
-      await axios.post(`${API_URL}/api/sessions/${sessionId}/join`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      fetchSessions(token)
-      showToast('Joined session successfully! 🐾')
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to join session', 'error')
-    }
-  }
-
   const handleCreateSession = async () => {
     const token = localStorage.getItem('token')
+    const stored = JSON.parse(localStorage.getItem('user'))
     try {
       await axios.post(`${API_URL}/api/sessions`, newSession, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setShowCreate(false)
       setNewSession({ courseCode: '', courseName: '', date: '', time: '', location: '', description: '', maxParticipants: 6 })
-      fetchSessions(token)
+      fetchMySessions(token, stored.id)
       showToast('Session created! 🎉')
     } catch (err) {
       showToast(err.response?.data?.error || 'Failed to create session', 'error')
@@ -105,7 +102,7 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-6 py-8">
 
         {/* Welcome Banner */}
         <div className="bg-ncat-blue rounded-2xl p-6 mb-8 text-white">
@@ -117,9 +114,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { emoji: '➕', label: 'Create Session', color: 'bg-green-50 border-green-200', onClick: () => setShowCreate(true) },
-            { emoji: '🔍', label: 'Find Partners', color: 'bg-blue-50 border-blue-200', onClick: () => navigate('/partners') },
-            { emoji: '💬', label: 'Messages', color: 'bg-yellow-50 border-yellow-200', onClick: () => {} },
-            { emoji: '🗺️', label: 'Campus Map', color: 'bg-red-50 border-red-200', onClick: () => {} },
+            { emoji: '🔍', label: 'Find Sessions', color: 'bg-blue-50 border-blue-200', onClick: () => navigate('/find-sessions') },
+            { emoji: '🤝', label: 'Find Partners', color: 'bg-yellow-50 border-yellow-200', onClick: () => navigate('/partners') },
+            { emoji: '💬', label: 'Messages', color: 'bg-red-50 border-red-200', onClick: () => {} },
           ].map((action, i) => (
             <button key={i} onClick={action.onClick} className={`${action.color} border rounded-2xl p-4 text-center hover:shadow-md transition`}>
               <div className="text-3xl mb-2">{action.emoji}</div>
@@ -128,23 +125,68 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Sessions */}
+        {/* My Sessions */}
         <div>
-          <h2 className="text-xl font-bold text-ncat-blue mb-4">📅 Study Sessions</h2>
-          {sessions.length === 0 ? (
+          <h2 className="text-xl font-bold text-ncat-blue mb-4">📋 My Sessions</h2>
+
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setActiveTab('upcoming')}
+              className={`px-5 py-2 rounded-xl font-semibold text-sm transition ${activeTab === 'upcoming' ? 'bg-ncat-blue text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-ncat-blue'}`}
+            >
+              Upcoming ({mySessions.upcoming.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`px-5 py-2 rounded-xl font-semibold text-sm transition ${activeTab === 'past' ? 'bg-ncat-blue text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-ncat-blue'}`}
+            >
+              Past ({mySessions.past.length})
+            </button>
+          </div>
+
+          {/* Session Cards */}
+          {(activeTab === 'upcoming' ? mySessions.upcoming : mySessions.past).length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <p className="text-4xl mb-3">📚</p>
-              <p className="text-gray-500 font-medium">No sessions yet — be the first to create one!</p>
+              <p className="text-4xl mb-3">{activeTab === 'upcoming' ? '📅' : '📜'}</p>
+              <p className="text-gray-500 font-medium">
+                {activeTab === 'upcoming'
+                  ? "No upcoming sessions — create one or find one to join!"
+                  : "No past sessions yet"}
+              </p>
+              {activeTab === 'upcoming' && (
+                <div className="flex gap-3 justify-center mt-4">
+                  <button
+                    onClick={() => setShowCreate(true)}
+                    className="bg-ncat-gold text-ncat-blue font-bold px-5 py-2 rounded-xl hover:opacity-90 transition text-sm"
+                  >
+                    Create Session
+                  </button>
+                  <button
+                    onClick={() => navigate('/find-sessions')}
+                    className="bg-ncat-blue text-white font-bold px-5 py-2 rounded-xl hover:opacity-90 transition text-sm"
+                  >
+                    Find Sessions
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sessions.map(session => (
-                <div key={session.id} className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition">
+              {(activeTab === 'upcoming' ? mySessions.upcoming : mySessions.past).map(session => (
+                <div key={session.id} className={`bg-white rounded-2xl border p-5 hover:shadow-md transition ${activeTab === 'past' ? 'opacity-75 border-gray-100' : 'border-gray-100'}`}>
                   <div className="flex justify-between items-start mb-3">
                     <span className="text-ncat-blue font-bold text-lg">{session.courseCode}</span>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${session.status === 'full' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                      {session.status}
-                    </span>
+                    <div className="flex gap-2 items-center">
+                      {session.hostId === user?.id && (
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-ncat-gold text-ncat-blue">
+                          Host
+                        </span>
+                      )}
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${activeTab === 'past' ? 'bg-gray-100 text-gray-500' : session.status === 'full' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                        {activeTab === 'past' ? 'completed' : session.status}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {session.time}</p>
                   <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
@@ -154,13 +196,6 @@ export default function Dashboard() {
                   )}
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
-                    <button
-                      onClick={() => handleJoin(session.id)}
-                      disabled={session.status === 'full'}
-                      className="bg-ncat-gold text-ncat-blue text-sm font-bold px-4 py-2 rounded-xl hover:opacity-90 transition disabled:opacity-40"
-                    >
-                      Join
-                    </button>
                   </div>
                 </div>
               ))}
@@ -179,28 +214,13 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-ncat-blue mb-1">Course Code</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. COMP 285"
-                    value={newSession.courseCode}
-                    onChange={e => setNewSession({...newSession, courseCode: e.target.value})}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-ncat-blue mb-1">Course Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Programming I"
-                    value={newSession.courseName}
-                    onChange={e => setNewSession({...newSession, courseName: e.target.value})}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
-                  />
-                </div>
-              </div>
+             <div>
+  <label className="block text-sm font-semibold text-ncat-blue mb-1">Course</label>
+  <CourseSelector
+    value={newSession.courseCode ? `${newSession.courseCode} — ${newSession.courseName}` : ''}
+    onChange={({ code, name }) => setNewSession({...newSession, courseCode: code, courseName: name})}
+  />
+</div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -277,9 +297,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Toast Notification */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
     </div>
   )
 }
