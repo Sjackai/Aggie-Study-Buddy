@@ -7,14 +7,14 @@ import Partners from './pages/Partners'
 import FindSessions from './pages/FindSessions'
 import CourseSessions from './pages/CourseSessions'
 import Profile from './pages/Profile'
-
-
+import Messages from './pages/Messages'
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/messages" element={<Messages />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/sessions/:courseCode" element={<CourseSessions />} />
         <Route path="/" element={<Home />} />

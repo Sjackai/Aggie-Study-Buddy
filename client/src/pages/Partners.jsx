@@ -1,9 +1,9 @@
-import Logo from '../components/Logo'
-import API_URL from '../config'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import API_URL from '../config'
 import Toast from '../components/Toast'
+import Logo from '../components/Logo'
 
 export default function Partners() {
   const navigate = useNavigate()
@@ -11,6 +11,7 @@ export default function Partners() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState(null)
+  const [selectedPartner, setSelectedPartner] = useState(null)
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
@@ -35,15 +36,33 @@ export default function Partners() {
     setLoading(false)
   }
 
-  const handleConnect = async (partnerId, partnerName) => {
+  const handleConnect = async () => {
+    if (!selectedPartner) return
     const token = localStorage.getItem('token')
     try {
-      await axios.post(`${API_URL}/api/connections`, { toUserId: partnerId }, {
+      await axios.post(`${API_URL}/api/connections`, { toUserId: selectedPartner.id }, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      showToast(`Connection request sent to ${partnerName}! 🤝`)
+      showToast(`Connection request sent to ${selectedPartner.name}! 🤝`)
     } catch (err) {
       showToast(err.response?.data?.error || 'Failed to send request', 'error')
+    }
+  }
+
+  const handleMessage = async () => {
+    if (!selectedPartner) return
+    const token = localStorage.getItem('token')
+    try {
+      await axios.post(`${API_URL}/api/messages`, {
+        receiverId: selectedPartner.id,
+        text: `Hey ${selectedPartner.name}! I saw your profile and would love to study together 🐾`
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setSelectedPartner(null)
+      navigate('/messages')
+    } catch (err) {
+      showToast('Failed to send message', 'error')
     }
   }
 
@@ -52,10 +71,9 @@ export default function Partners() {
     p.major?.toLowerCase().includes(search.toLowerCase())
   )
 
-  const getInitials = (name) => name.split(' ').map(n => n[0]).join('').toUpperCase()
-
+  const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'
   const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500']
-  const getColor = (name) => colors[name.charCodeAt(0) % colors.length]
+  const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -104,12 +122,16 @@ export default function Partners() {
         {filtered.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <p className="text-4xl mb-3">🤝</p>
-            <p className="text-gray-500 font-medium">No partners found — try a different search!</p>
+            <p className="text-gray-500 font-medium">No partners found!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(partner => (
-              <div key={partner.id} className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition">
+              <div
+                key={partner.id}
+                onClick={() => setSelectedPartner(partner)}
+                className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer"
+              >
                 <div className="flex items-center gap-4 mb-4">
                   <div className={`w-14 h-14 ${getColor(partner.name)} rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
                     {getInitials(partner.name)}
@@ -130,18 +152,72 @@ export default function Partners() {
                     <span className="text-yellow-400 text-sm">⭐</span>
                     <span className="text-sm font-semibold text-gray-700">{partner.rating?.toFixed(1) || '0.0'}</span>
                   </div>
-                  <button
-                    onClick={() => handleConnect(partner.id, partner.name)}
-                    className="bg-ncat-blue text-white text-sm font-bold px-4 py-2 rounded-xl hover:opacity-90 transition"
-                  >
-                    Connect
-                  </button>
+                  <span className="text-ncat-blue text-sm font-semibold">View Profile →</span>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Partner Profile Modal */}
+      {selectedPartner && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
+
+            {/* Modal Header */}
+            <div className="bg-ncat-blue p-6 relative">
+              <button
+                onClick={() => setSelectedPartner(null)}
+                className="absolute top-4 right-4 text-white opacity-70 hover:opacity-100 text-2xl"
+              >
+                ✕
+              </button>
+              <div className="flex items-center gap-4">
+                <div className={`w-16 h-16 ${getColor(selectedPartner.name)} rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-ncat-gold`}>
+                  {getInitials(selectedPartner.name)}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{selectedPartner.name}</h2>
+                  <p className="text-blue-200">{selectedPartner.major || 'Undeclared'} · {selectedPartner.year || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {selectedPartner.bio && (
+                <div className="mb-4">
+                  <p className="text-sm font-semibold text-ncat-blue mb-1">About</p>
+                  <p className="text-gray-600 text-sm leading-relaxed">{selectedPartner.bio}</p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-yellow-400">⭐</span>
+                <span className="font-semibold text-gray-700">{selectedPartner.rating?.toFixed(1) || '0.0'}</span>
+                <span className="text-gray-400 text-sm">rating</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConnect}
+                  className="flex-1 bg-ncat-blue text-white font-bold py-3 rounded-xl hover:opacity-90 transition"
+                >
+                  🤝 Connect
+                </button>
+                <button
+                  onClick={handleMessage}
+                  className="flex-1 bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition"
+                >
+                  💬 Message
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>

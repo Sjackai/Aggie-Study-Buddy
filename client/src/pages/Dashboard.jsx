@@ -121,7 +121,7 @@ export default function Dashboard() {
             { emoji: '➕', label: 'Create Session', color: 'bg-green-50 border-green-200', onClick: () => setShowCreate(true) },
             { emoji: '🔍', label: 'Find Sessions', color: 'bg-blue-50 border-blue-200', onClick: () => navigate('/find-sessions') },
             { emoji: '🤝', label: 'Find Partners', color: 'bg-yellow-50 border-yellow-200', onClick: () => navigate('/partners') },
-            { emoji: '💬', label: 'Messages', color: 'bg-red-50 border-red-200', onClick: () => {} },
+           { emoji: '💬', label: 'Messages', color: 'bg-red-50 border-red-200', onClick: () => navigate('/messages') },
           ].map((action, i) => (
             <button key={i} onClick={action.onClick} className={`${action.color} border rounded-2xl p-4 text-center hover:shadow-md transition`}>
               <div className="text-3xl mb-2">{action.emoji}</div>
