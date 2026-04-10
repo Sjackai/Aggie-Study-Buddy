@@ -13,7 +13,11 @@ router.get('/', async (req, res) => {
       where: course ? { courseCode: course } : {},
       include: {
         host: { select: { id: true, name: true, rating: true } },
-        members: true
+        members: {
+          include: {
+            user: { select: { id: true, name: true } }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -40,8 +44,28 @@ router.post('/', authMiddleware, async (req, res) => {
         hostId: req.userId
       }
     })
+
+    // Auto create group chat for this session
+    const sessionDate = new Date(date)
+    const expiresAt = new Date(sessionDate)
+    expiresAt.setDate(expiresAt.getDate() + 1) // expires 24hrs after session date
+
+    const groupChat = await prisma.groupChat.create({
+      data: {
+        name: `${courseCode} Study Session`,
+        sessionId: session.id,
+        expiresAt
+      }
+    })
+
+    // Add host to group chat
+    await prisma.groupChatMember.create({
+      data: { groupChatId: groupChat.id, userId: req.userId }
+    })
+
     res.json(session)
   } catch (err) {
+    console.error(err)
     res.status(500).json({ error: 'Failed to create session' })
   }
 })
@@ -51,13 +75,17 @@ router.post('/:id/join', authMiddleware, async (req, res) => {
   try {
     const session = await prisma.session.findUnique({
       where: { id: req.params.id },
-      include: { members: true }
+      include: { members: true, groupChat: true }
     })
 
     if (!session) return res.status(404).json({ error: 'Session not found' })
     if (session.members.length >= session.maxParticipants) {
       return res.status(400).json({ error: 'Session is full' })
     }
+
+    // Check if already a member
+    const existing = session.members.find(m => m.userId === req.userId)
+    if (existing) return res.status(400).json({ error: 'Already joined this session' })
 
     const member = await prisma.sessionMember.create({
       data: { sessionId: session.id, userId: req.userId }
@@ -70,8 +98,21 @@ router.post('/:id/join', authMiddleware, async (req, res) => {
       })
     }
 
+    // Auto add to group chat
+    if (session.groupChat) {
+      const alreadyInChat = await prisma.groupChatMember.findFirst({
+        where: { groupChatId: session.groupChat.id, userId: req.userId, leftAt: null }
+      })
+      if (!alreadyInChat) {
+        await prisma.groupChatMember.create({
+          data: { groupChatId: session.groupChat.id, userId: req.userId }
+        })
+      }
+    }
+
     res.json(member)
   } catch (err) {
+    console.error(err)
     res.status(500).json({ error: 'Failed to join session' })
   }
 })
