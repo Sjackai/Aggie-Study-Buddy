@@ -14,6 +14,10 @@ const formatTime = (time) => {
   return `${hour}:${minutes} ${ampm}`
 }
 
+const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'
+const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500']
+const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
+
 export default function FindSessions() {
   const navigate = useNavigate()
   const [sessions, setSessions] = useState([])
@@ -168,28 +172,69 @@ export default function FindSessions() {
                 {courseSessions.slice(0, 2).map(session => (
                   <div
                     key={session.id}
-                    className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer"
+                    className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer relative overflow-hidden"
                     onClick={() => setSelectedSession(session)}
                   >
+                    {/* Top row - course code and status */}
                     <div className="flex justify-between items-start mb-3">
-                      <span className="font-bold text-gray-800">{session.courseCode}</span>
+                      <span className="font-bold text-ncat-blue text-lg">{session.courseCode}</span>
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${session.status === 'full' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
                         {session.status}
                       </span>
                     </div>
-                    <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
-                    <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
-                    <p className="text-gray-500 text-sm mb-3 cursor-pointer hover:text-ncat-blue transition"
-                       onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
-                        >
-                         👤 Host: <span className="hover:underline">{session.host?.name}</span>
-                    </p>
-                    {session.description && (
-                      <p className="text-gray-600 text-sm bg-gray-50 rounded-lg p-2 mb-3">{session.description}</p>
-                    )}
-                    <div className="flex justify-between items-center">
+
+                    {/* Main content with host avatar on right */}
+                    <div className="flex gap-3">
+                      {/* Left side - session details */}
+                      <div className="flex-1">
+                        <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
+                        <p className="text-gray-500 text-sm mb-2">📍 {session.location}</p>
+                        {session.description && (
+                          <p className="text-gray-600 text-xs bg-gray-50 rounded-lg p-2 mb-2 line-clamp-2">{session.description}</p>
+                        )}
+                      </div>
+
+                      {/* Right side - host avatar */}
+                      <div
+                        className="flex flex-col items-center gap-1 flex-shrink-0"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+                      >
+                        <div className={`w-16 h-16 ${getColor(session.host?.name)} rounded-2xl flex items-center justify-center text-white font-bold text-xl hover:opacity-80 transition`}>
+                          {getInitials(session.host?.name)}
+                        </div>
+                        <span className="text-xs text-ncat-blue font-semibold text-center hover:underline max-w-16 truncate">
+                          {session.host?.name?.split(' ')[0]}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bottom row - member lobby + spots */}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                      {/* Member lobby avatars */}
+                      <div className="flex items-center">
+                        {session.members?.slice(0, 4).map((member, i) => (
+                          <div
+                            key={member.userId || i}
+                            className={`w-7 h-7 ${getColor(member.user?.name || 'User')} rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-xs`}
+                            style={{ marginLeft: i > 0 ? '-8px' : '0' }}
+                            title={member.user?.name}
+                          >
+                            {getInitials(member.user?.name || 'U')}
+                          </div>
+                        ))}
+                        {session.members?.length > 4 && (
+                          <div
+                            className="w-7 h-7 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center text-gray-600 font-bold text-xs"
+                            style={{ marginLeft: '-8px' }}
+                          >
+                            +{session.members.length - 4}
+                          </div>
+                        )}
+                        {session.members?.length === 0 && (
+                          <span className="text-xs text-gray-400">No members yet</span>
+                        )}
+                      </div>
                       <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
-                      <span className="text-ncat-blue text-sm font-semibold">Tap to view →</span>
                     </div>
                   </div>
                 ))}
@@ -207,18 +252,42 @@ export default function FindSessions() {
               <h2 className="text-xl font-bold text-ncat-blue">{selectedSession.courseCode}</h2>
               <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
             </div>
+
+            {/* Host in modal */}
+            <div
+              className="flex items-center gap-3 mb-4 cursor-pointer group"
+              onClick={() => { setSelectedSession(null); navigate(`/profile/${selectedSession.host?.id}`) }}
+            >
+              <div className={`w-12 h-12 ${getColor(selectedSession.host?.name)} rounded-xl flex items-center justify-center text-white font-bold`}>
+                {getInitials(selectedSession.host?.name)}
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Hosted by</p>
+                <p className="text-ncat-blue font-semibold group-hover:underline">{selectedSession.host?.name}</p>
+              </div>
+            </div>
+
             <p className="text-gray-500 text-sm mb-1">📅 {selectedSession.date} at {formatTime(selectedSession.time)}</p>
             <p className="text-gray-500 text-sm mb-1">📍 {selectedSession.location}</p>
-            <p className="text-gray-500 text-sm mb-3">
-              👤 Host:{' '}
-              <span
-              className="text-ncat-blue hover:underline cursor-pointer font-semibold"
-              onClick={(e) => { e.stopPropagation(); navigate(`/profile/${selectedSession.host?.name}`) }}
-              >
-                {selectedSession.host?.name}
-                 </span>
-                 </p>
             <p className="text-gray-500 text-sm mb-4">👥 {selectedSession.members?.length}/{selectedSession.maxParticipants} spots filled</p>
+
+            {/* Member lobby in modal */}
+            {selectedSession.members?.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-400 mb-2">Members joined</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedSession.members.map((member, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <div className={`w-8 h-8 ${getColor(member.user?.name || 'User')} rounded-full flex items-center justify-center text-white font-bold text-xs`}>
+                        {getInitials(member.user?.name || 'U')}
+                      </div>
+                      <span className="text-xs text-gray-600">{member.user?.name?.split(' ')[0]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedSession.description && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">
                 <p className="text-sm font-semibold text-gray-700 mb-1">About this session</p>

@@ -156,15 +156,17 @@ export default function CourseSessions() {
             </div>
             <p className="text-gray-500 text-sm mb-1">📅 {selectedSession.date} at {formatTime(selectedSession.time)}</p>
             <p className="text-gray-500 text-sm mb-1">📍 {selectedSession.location}</p>
-            <p className="text-gray-500 text-sm mb-3">
-              👤 Host:{' '}
-              <span
-               className="text-ncat-blue hover:underline cursor-pointer font-semibold"
-               onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
-               >
-                 {session.host?.name}
-                 </span>
-                 </p>
+            <div 
+            className="flex items-center gap-2 mb-3 cursor-pointer group"
+            onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+            >
+              <div className={`w-7 h-7 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
+                {getInitials(session.host?.name)}
+                </div>
+                <span className="text-sm text-ncat-blue font-semibold group-hover:underline">
+                  {session.host?.name}
+                  </span>
+                  </div>
             <p className="text-gray-500 text-sm mb-4">👥 {selectedSession.members?.length}/{selectedSession.maxParticipants} spots filled</p>
             {selectedSession.description && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">

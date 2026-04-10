@@ -16,6 +16,10 @@ const formatTime = (time) => {
   return `${hour}:${minutes} ${ampm}`
 }
 
+const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'
+const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500']
+const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
+
 export default function Dashboard() {
   const [showKudos, setShowKudos] = useState(false)
   const [kudosSession, setKudosSession] = useState(null)
@@ -255,15 +259,17 @@ export default function Dashboard() {
                   </div>
                   <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
                   <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
-                  <p className="text-gray-500 text-sm mb-3">
-                     👤 Host:{' '}
-                     <span
-                     className="text-ncat-blue hover:underline cursor-pointer font-semibold"
-                     onClick={() => navigate(`/profile/${session.host?.id}`)}
-                     >
-                      {session.host?.name}
-                      </span>
-                      </p>
+                  <div 
+                  className="flex items-center gap-2 mb-3 cursor-pointer group"
+                  onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+                  >
+                    <div className={`w-7 h-7 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
+                      {getInitials(session.host?.name)}
+                      </div>
+                      <span className="text-sm text-ncat-blue font-semibold group-hover:underline">
+                        {session.host?.name}
+                        </span>
+                        </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
                   </div>
