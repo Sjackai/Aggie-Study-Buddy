@@ -25,6 +25,10 @@ model User {
   connectionsTo    Connection[]    @relation("ConnectionTo")
   sentMessages     Message[]       @relation("MessageSender")
   receivedMessages Message[]       @relation("MessageReceiver")
+  kudosGiven     Kudos[]      @relation("KudosFrom")
+  kudosReceived  Kudos[]      @relation("KudosTo")
+  starzGiven     BuddyStarz[] @relation("StarzFrom")
+  starzReceived  BuddyStarz[] @relation("StarzTo")
 }
 
 model Session {
@@ -43,6 +47,8 @@ model Session {
   hostId  String
 
   members SessionMember[]
+  kudos      Kudos[]
+  buddyStarz BuddyStarz[]
 }
 
 model SessionMember {
@@ -81,4 +87,33 @@ model Message {
   receiverId String
 
   sessionId String?
+}
+model Kudos {
+  id        String   @id @default(cuid())
+  tag       String
+  createdAt DateTime @default(now())
+
+  fromUser   User   @relation("KudosFrom", fields: [fromUserId], references: [id])
+  fromUserId String
+
+  toUser   User   @relation("KudosTo", fields: [toUserId], references: [id])
+  toUserId String
+
+  session   Session @relation(fields: [sessionId], references: [id])
+  sessionId String
+}
+
+model BuddyStarz {
+  id        String   @id @default(cuid())
+  amount    Float    @default(0)
+  createdAt DateTime @default(now())
+
+  fromUser   User   @relation("StarzFrom", fields: [fromUserId], references: [id])
+  fromUserId String
+
+  toUser   User   @relation("StarzTo", fields: [toUserId], references: [id])
+  toUserId String
+
+  session   Session @relation(fields: [sessionId], references: [id])
+  sessionId String
 }

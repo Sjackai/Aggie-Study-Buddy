@@ -1,12 +1,16 @@
 import Logo from '../components/Logo'
 import CourseSelector from '../components/CourseSelector'
 import Toast from '../components/Toast'
+import KudosModal from '../components/KudosModal'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import API_URL from '../config'
 
 export default function Dashboard() {
+  const [showKudos, setShowKudos] = useState(false)
+  const [kudosSession, setKudosSession] = useState(null)
+  const [kudosPrompt, setKudosPrompt] = useState(null)
   const [toast, setToast] = useState(null)
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
@@ -32,6 +36,7 @@ export default function Dashboard() {
     }
     setUser(JSON.parse(stored))
     fetchMySessions(token, JSON.parse(stored).id)
+    checkKudosEligible(token)
   }, [])
 
   const fetchMySessions = async (token, userId) => {
@@ -51,6 +56,20 @@ export default function Dashboard() {
       console.error(err)
     }
     setLoading(false)
+  }
+
+  const checkKudosEligible = async (token) => {
+    try {
+      const res = await axios.get(`${API_URL}/api/kudos/eligible`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.data.length > 0) {
+        // Show prompt for the first eligible session
+        setKudosPrompt(res.data[0])
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const handleLogout = () => {
@@ -75,6 +94,14 @@ export default function Dashboard() {
     }
   }
 
+  // Check if session is within 24hr kudos window
+  const isKudosEligible = (session) => {
+    const sessionDate = new Date(session.date)
+    const now = new Date()
+    const diffHours = (now - sessionDate) / (1000 * 60 * 60)
+    return diffHours <= 48 && diffHours >= 0
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <p className="text-ncat-blue font-semibold text-lg">Loading...</p>
@@ -91,23 +118,51 @@ export default function Dashboard() {
           <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
         </div>
         <div className="flex items-center gap-4">
-  <span className="text-blue-200 text-sm">👋 {user?.name}</span>
-  <button
-    onClick={() => navigate('/profile')}
-    className="bg-ncat-gold text-ncat-blue font-semibold text-sm px-4 py-2 rounded-xl hover:opacity-90 transition"
-  >
-    👤 Profile
-  </button>
-  <button
-    onClick={handleLogout}
-    className="bg-white text-ncat-blue font-semibold text-sm px-4 py-2 rounded-xl hover:opacity-90 transition"
-  >
-    Log Out
-  </button>
-</div>
+          <span className="text-blue-200 text-sm">👋 {user?.name}</span>
+          <button
+            onClick={() => navigate('/profile')}
+            className="bg-ncat-gold text-ncat-blue font-semibold text-sm px-4 py-2 rounded-xl hover:opacity-90 transition"
+          >
+            👤 Profile
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-white text-ncat-blue font-semibold text-sm px-4 py-2 rounded-xl hover:opacity-90 transition"
+          >
+            Log Out
+          </button>
+        </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8">
+
+        {/* Kudos Prompt Banner */}
+        {kudosPrompt && (
+          <div className="bg-ncat-gold rounded-2xl p-5 mb-6 flex items-center justify-between">
+            <div>
+              <p className="font-bold text-ncat-blue text-lg">⭐ Give Kudos!</p>
+              <p className="text-ncat-blue text-sm">Your <span className="font-semibold">{kudosPrompt.courseCode}</span> session just ended. Want to recognize your study group?</p>
+            </div>
+            <div className="flex gap-2 ml-4">
+              <button
+                onClick={() => {
+                  setKudosSession(kudosPrompt)
+                  setShowKudos(true)
+                  setKudosPrompt(null)
+                }}
+                className="bg-ncat-blue text-white font-bold px-4 py-2 rounded-xl hover:opacity-90 transition text-sm whitespace-nowrap"
+              >
+                Yes! ⭐
+              </button>
+              <button
+                onClick={() => setKudosPrompt(null)}
+                className="bg-white text-ncat-blue font-bold px-4 py-2 rounded-xl hover:opacity-90 transition text-sm whitespace-nowrap"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Welcome Banner */}
         <div className="bg-ncat-blue rounded-2xl p-6 mb-8 text-white">
@@ -121,7 +176,7 @@ export default function Dashboard() {
             { emoji: '➕', label: 'Create Session', color: 'bg-green-50 border-green-200', onClick: () => setShowCreate(true) },
             { emoji: '🔍', label: 'Find Sessions', color: 'bg-blue-50 border-blue-200', onClick: () => navigate('/find-sessions') },
             { emoji: '🤝', label: 'Find Partners', color: 'bg-yellow-50 border-yellow-200', onClick: () => navigate('/partners') },
-           { emoji: '💬', label: 'Messages', color: 'bg-red-50 border-red-200', onClick: () => navigate('/messages') },
+            { emoji: '💬', label: 'Messages', color: 'bg-red-50 border-red-200', onClick: () => navigate('/messages') },
           ].map((action, i) => (
             <button key={i} onClick={action.onClick} className={`${action.color} border rounded-2xl p-4 text-center hover:shadow-md transition`}>
               <div className="text-3xl mb-2">{action.emoji}</div>
@@ -202,6 +257,18 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
                   </div>
+
+                  {activeTab === 'past' && isKudosEligible(session) && (
+                    <button
+                      onClick={() => {
+                        setKudosSession(session)
+                        setShowKudos(true)
+                      }}
+                      className="mt-3 w-full bg-ncat-gold text-ncat-blue text-sm font-bold py-2 rounded-xl hover:opacity-90 transition"
+                    >
+                      ⭐ Give Kudos
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -219,13 +286,13 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4">
-             <div>
-  <label className="block text-sm font-semibold text-ncat-blue mb-1">Course</label>
-  <CourseSelector
-    value={newSession.courseCode ? `${newSession.courseCode} — ${newSession.courseName}` : ''}
-    onChange={({ code, name }) => setNewSession({...newSession, courseCode: code, courseName: name})}
-  />
-</div>
+              <div>
+                <label className="block text-sm font-semibold text-ncat-blue mb-1">Course</label>
+                <CourseSelector
+                  value={newSession.courseCode ? `${newSession.courseCode} — ${newSession.courseName}` : ''}
+                  onChange={({ code, name }) => setNewSession({...newSession, courseCode: code, courseName: name})}
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -300,6 +367,22 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Kudos Modal */}
+      {showKudos && kudosSession && (
+        <KudosModal
+          session={kudosSession}
+          onClose={() => {
+            setShowKudos(false)
+            setKudosSession(null)
+          }}
+          onSuccess={() => {
+            setShowKudos(false)
+            setKudosSession(null)
+            showToast('Kudos sent! ⭐')
+          }}
+        />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
