@@ -1,9 +1,18 @@
-import Logo from '../components/Logo'
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import API_URL from '../config'
 import Toast from '../components/Toast'
+import Logo from '../components/Logo'
+
+const formatTime = (time) => {
+  if (!time) return ''
+  const [hours, minutes] = time.split(':')
+  const h = parseInt(hours)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${minutes} ${ampm}`
+}
 
 export default function CourseSessions() {
   const navigate = useNavigate()
@@ -117,9 +126,13 @@ export default function CourseSessions() {
                     {session.status}
                   </span>
                 </div>
-                <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {session.time}</p>
+                <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
                 <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
-                <p className="text-gray-500 text-sm mb-3">👤 Host: {session.host?.name}</p>
+                <p className="text-gray-500 text-sm mb-3 cursor-pointer hover:text-ncat-blue transition"
+                onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+                >
+                  👤 Host: <span className="hover:underline">{session.host?.name}</span>
+                  </p>
                 {session.description && (
                   <p className="text-gray-600 text-sm bg-gray-50 rounded-lg p-2 mb-3">{session.description}</p>
                 )}
@@ -141,9 +154,17 @@ export default function CourseSessions() {
               <h2 className="text-xl font-bold text-ncat-blue">{selectedSession.courseCode}</h2>
               <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
             </div>
-            <p className="text-gray-500 text-sm mb-1">📅 {selectedSession.date} at {selectedSession.time}</p>
+            <p className="text-gray-500 text-sm mb-1">📅 {selectedSession.date} at {formatTime(selectedSession.time)}</p>
             <p className="text-gray-500 text-sm mb-1">📍 {selectedSession.location}</p>
-            <p className="text-gray-500 text-sm mb-1">👤 Host: {selectedSession.host?.name}</p>
+            <p className="text-gray-500 text-sm mb-3">
+              👤 Host:{' '}
+              <span
+               className="text-ncat-blue hover:underline cursor-pointer font-semibold"
+               onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+               >
+                 {session.host?.name}
+                 </span>
+                 </p>
             <p className="text-gray-500 text-sm mb-4">👥 {selectedSession.members?.length}/{selectedSession.maxParticipants} spots filled</p>
             {selectedSession.description && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">

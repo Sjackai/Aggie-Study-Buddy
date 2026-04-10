@@ -1,9 +1,18 @@
-import Logo from '../components/Logo'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import API_URL from '../config'
 import Toast from '../components/Toast'
+import Logo from '../components/Logo'
+
+const formatTime = (time) => {
+  if (!time) return ''
+  const [hours, minutes] = time.split(':')
+  const h = parseInt(hours)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${minutes} ${ampm}`
+}
 
 export default function FindSessions() {
   const navigate = useNavigate()
@@ -11,7 +20,7 @@ export default function FindSessions() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const [search, setSearch] = useState('')
-  const [locationFilter, setLocationFilter] = useState('')
+  const [activeChip, setActiveChip] = useState('All')
   const [selectedSession, setSelectedSession] = useState(null)
 
   const showToast = (message, type = 'success') => {
@@ -56,14 +65,15 @@ export default function FindSessions() {
     }
   }
 
-  const locations = [...new Set(sessions.map(s => s.location))]
+  const courseCodes = ['All', ...new Set(sessions.map(s => s.courseCode))]
 
   const filtered = sessions.filter(s => {
-    const matchSearch = s.courseCode.toLowerCase().includes(search.toLowerCase()) ||
+    const matchChip = activeChip === 'All' || s.courseCode === activeChip
+    const matchSearch = !search ||
+      s.courseCode.toLowerCase().includes(search.toLowerCase()) ||
       s.courseName.toLowerCase().includes(search.toLowerCase()) ||
       s.description?.toLowerCase().includes(search.toLowerCase())
-    const matchLocation = !locationFilter || s.location === locationFilter
-    return matchSearch && matchLocation
+    return matchChip && matchSearch
   })
 
   const grouped = filtered.reduce((acc, session) => {
@@ -92,58 +102,70 @@ export default function FindSessions() {
           onClick={() => navigate('/dashboard')}
           className="text-white hover:text-ncat-gold transition font-medium"
         >
-          ← Back to Dashboard
+          ← Back
         </button>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-8">
 
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-ncat-blue mb-2">Find Study Sessions 🔍</h1>
           <p className="text-gray-500">Browse upcoming sessions from fellow Aggies</p>
         </div>
 
-        {/* Search & Filter */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <span className="absolute left-4 top-3.5 text-gray-400">🔍</span>
-            <input
-              type="text"
-              placeholder="Search by course code or name..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full border border-gray-200 rounded-2xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-ncat-blue bg-white shadow-sm"
-            />
-          </div>
-          <select
-            value={locationFilter}
-            onChange={e => setLocationFilter(e.target.value)}
-            className="border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ncat-blue bg-white shadow-sm"
-          >
-            <option value="">All Locations</option>
-            {locations.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
+        {/* Search */}
+        <div className="relative mb-4">
+          <span className="absolute left-4 top-3.5 text-gray-400">🔍</span>
+          <input
+            type="text"
+            placeholder="Search by course or topic..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full border border-gray-200 rounded-2xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-ncat-blue bg-white shadow-sm"
+          />
+        </div>
+
+        {/* Horizontal Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide">
+          {courseCodes.map(code => (
+            <button
+              key={code}
+              onClick={() => setActiveChip(code)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition border ${
+                activeChip === code
+                  ? 'bg-ncat-blue text-white border-ncat-blue'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-ncat-blue hover:text-ncat-blue'
+              }`}
+            >
+              {code}
+            </button>
+          ))}
         </div>
 
         {/* Results */}
         {Object.keys(grouped).length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <p className="text-4xl mb-3">📚</p>
-            <p className="text-gray-500 font-medium">No sessions found — try a different search!</p>
+            <p className="text-gray-500 font-medium">No sessions found!</p>
           </div>
         ) : (
           Object.entries(grouped).map(([courseCode, courseSessions]) => (
             <div key={courseCode} className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
+              <button
+                className="flex items-center gap-3 mb-4 w-full text-left hover:opacity-80 transition"
+                onClick={() => navigate(`/sessions/${encodeURIComponent(courseCode)}`)}
+              >
                 <h2 className="text-lg font-bold text-ncat-blue">{courseCode}</h2>
                 <span className="text-sm text-gray-400">{courseSessions[0].courseName}</span>
                 <span className="bg-ncat-blue text-white text-xs font-bold px-2 py-1 rounded-full">
                   {courseSessions.length} session{courseSessions.length > 1 ? 's' : ''}
                 </span>
-              </div>
+                <span className="text-ncat-blue text-sm ml-auto">View all →</span>
+              </button>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {courseSessions.map(session => (
+                {courseSessions.slice(0, 2).map(session => (
                   <div
                     key={session.id}
                     className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer"
@@ -155,9 +177,13 @@ export default function FindSessions() {
                         {session.status}
                       </span>
                     </div>
-                    <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {session.time}</p>
+                    <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
                     <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
-                    <p className="text-gray-500 text-sm mb-3">👤 Host: {session.host?.name}</p>
+                    <p className="text-gray-500 text-sm mb-3 cursor-pointer hover:text-ncat-blue transition"
+                       onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+                        >
+                         👤 Host: <span className="hover:underline">{session.host?.name}</span>
+                    </p>
                     {session.description && (
                       <p className="text-gray-600 text-sm bg-gray-50 rounded-lg p-2 mb-3">{session.description}</p>
                     )}
@@ -181,9 +207,17 @@ export default function FindSessions() {
               <h2 className="text-xl font-bold text-ncat-blue">{selectedSession.courseCode}</h2>
               <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
             </div>
-            <p className="text-gray-500 text-sm mb-1">📅 {selectedSession.date} at {selectedSession.time}</p>
+            <p className="text-gray-500 text-sm mb-1">📅 {selectedSession.date} at {formatTime(selectedSession.time)}</p>
             <p className="text-gray-500 text-sm mb-1">📍 {selectedSession.location}</p>
-            <p className="text-gray-500 text-sm mb-1">👤 Host: {selectedSession.host?.name}</p>
+            <p className="text-gray-500 text-sm mb-3">
+              👤 Host:{' '}
+              <span
+              className="text-ncat-blue hover:underline cursor-pointer font-semibold"
+              onClick={(e) => { e.stopPropagation(); navigate(`/profile/${selectedSession.host?.name}`) }}
+              >
+                {selectedSession.host?.name}
+                 </span>
+                 </p>
             <p className="text-gray-500 text-sm mb-4">👥 {selectedSession.members?.length}/{selectedSession.maxParticipants} spots filled</p>
             {selectedSession.description && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">

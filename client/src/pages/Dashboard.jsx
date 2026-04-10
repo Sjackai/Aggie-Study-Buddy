@@ -7,6 +7,15 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import API_URL from '../config'
 
+const formatTime = (time) => {
+  if (!time) return ''
+  const [hours, minutes] = time.split(':')
+  const h = parseInt(hours)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${minutes} ${ampm}`
+}
+
 export default function Dashboard() {
   const [showKudos, setShowKudos] = useState(false)
   const [kudosSession, setKudosSession] = useState(null)
@@ -64,7 +73,6 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.data.length > 0) {
-        // Show prompt for the first eligible session
         setKudosPrompt(res.data[0])
       }
     } catch (err) {
@@ -94,12 +102,11 @@ export default function Dashboard() {
     }
   }
 
-  // Check if session is within 24hr kudos window
   const isKudosEligible = (session) => {
     const sessionDate = new Date(session.date)
     const now = new Date()
     const diffHours = (now - sessionDate) / (1000 * 60 * 60)
-    return diffHours <= 48 && diffHours >= 0
+    return diffHours <= 24 && diffHours >= 0
   }
 
   if (loading) return (
@@ -189,7 +196,6 @@ export default function Dashboard() {
         <div>
           <h2 className="text-xl font-bold text-ncat-blue mb-4">📋 My Sessions</h2>
 
-          {/* Tabs */}
           <div className="flex gap-2 mb-6">
             <button
               onClick={() => setActiveTab('upcoming')}
@@ -205,7 +211,6 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* Session Cards */}
           {(activeTab === 'upcoming' ? mySessions.upcoming : mySessions.past).length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <p className="text-4xl mb-3">{activeTab === 'upcoming' ? '📅' : '📜'}</p>
@@ -248,26 +253,45 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {session.time}</p>
+                  <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
                   <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
-                  <p className="text-gray-500 text-sm mb-3">👤 Host: {session.host?.name}</p>
-                  {session.description && (
-                    <p className="text-gray-600 text-sm mb-3 bg-gray-50 rounded-lg p-2">{session.description}</p>
-                  )}
+                  <p className="text-gray-500 text-sm mb-3">
+                     👤 Host:{' '}
+                     <span
+                     className="text-ncat-blue hover:underline cursor-pointer font-semibold"
+                     onClick={() => navigate(`/profile/${session.host?.id}`)}
+                     >
+                      {session.host?.name}
+                      </span>
+                      </p>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
                   </div>
 
-                  {activeTab === 'past' && isKudosEligible(session) && (
-                    <button
-                      onClick={() => {
-                        setKudosSession(session)
-                        setShowKudos(true)
-                      }}
-                      className="mt-3 w-full bg-ncat-gold text-ncat-blue text-sm font-bold py-2 rounded-xl hover:opacity-90 transition"
-                    >
-                      ⭐ Give Kudos
-                    </button>
+                  {activeTab === 'past' && (
+                    <div className="relative group mt-3">
+                      <button
+                        onClick={() => {
+                          if (!isKudosEligible(session)) return
+                          setKudosSession(session)
+                          setShowKudos(true)
+                        }}
+                        disabled={!isKudosEligible(session)}
+                        className={`w-full text-sm font-bold py-2 rounded-xl transition ${
+                          isKudosEligible(session)
+                            ? 'bg-ncat-gold text-ncat-blue hover:opacity-90'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        ⭐ Give Kudos
+                      </button>
+                      {!isKudosEligible(session) && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-gray-800 text-white text-xs rounded-xl px-3 py-2 opacity-0 group-hover:opacity-100 transition pointer-events-none text-center z-10">
+                          Kudos can only be given within 24 hours of the session ending
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
@@ -306,12 +330,26 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-ncat-blue mb-1">Time</label>
-                  <input
-                    type="time"
+                  <select
                     value={newSession.time}
                     onChange={e => setNewSession({...newSession, time: e.target.value})}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
-                  />
+                  >
+                    <option value="">Select time</option>
+                    {[
+                      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+                      '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+                      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+                      '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+                      '20:00', '20:30', '21:00', '21:30', '22:00'
+                    ].map(t => {
+                      const [h, m] = t.split(':')
+                      const hour = parseInt(h)
+                      const ampm = hour >= 12 ? 'PM' : 'AM'
+                      const display = `${hour % 12 || 12}:${m} ${ampm}`
+                      return <option key={t} value={t}>{display}</option>
+                    })}
+                  </select>
                 </div>
               </div>
 

@@ -133,7 +133,10 @@ export default function Partners() {
                 className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className={`w-14 h-14 ${getColor(partner.name)} rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
+                  
+                  <div 
+                  onClick={() => navigate(`/profile/${partner.id}`)}
+                  className={`w-14 h-14 ${getColor(partner.name)} rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
                     {getInitials(partner.name)}
                   </div>
                   <div>

@@ -8,12 +8,16 @@ import FindSessions from './pages/FindSessions'
 import CourseSessions from './pages/CourseSessions'
 import Profile from './pages/Profile'
 import Messages from './pages/Messages'
+import PublicProfile from './pages/PublicProfile'
+
+
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/profile/:userId" element={<PublicProfile />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/sessions/:courseCode" element={<CourseSessions />} />
