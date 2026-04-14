@@ -29,7 +29,7 @@ router.get('/', authMiddleware, async (req, res) => {
             },
             messages: {
               orderBy: { createdAt: 'desc' },
-              take: 1,
+              take: 5,
               include: {
                 sender: { select: { id: true, name: true } }
               }
@@ -42,7 +42,12 @@ router.get('/', authMiddleware, async (req, res) => {
     const now = new Date()
     const activeChats = memberships
       .filter(m => new Date(m.groupChat.expiresAt) > now)
-      .map(m => m.groupChat)
+      .map(m => ({
+        ...m.groupChat,
+        hasUnread: m.groupChat.messages.some(
+          msg => new Date(msg.createdAt) > new Date(m.lastRead) && msg.senderId !== req.userId
+        )
+      }))
 
     res.json(activeChats)
   } catch (err) {
@@ -50,7 +55,6 @@ router.get('/', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch group chats' })
   }
 })
-
 // GET MESSAGES FOR A GROUP CHAT
 router.get('/:id/messages', authMiddleware, async (req, res) => {
   try {
@@ -178,5 +182,36 @@ router.post('/:id/approve/:userId', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to approve rejoin' })
   }
 })
+// GET REJOIN REQUESTS FOR HOST
+router.get('/:id/rejoin-requests', authMiddleware, async (req, res) => {
+  try {
+    const groupChat = await prisma.groupChat.findUnique({
+      where: { id: req.params.id },
+      include: { session: true }
+    })
 
+    if (!groupChat) return res.status(404).json({ error: 'Chat not found' })
+    if (groupChat.session.hostId !== req.userId) return res.json([])
+
+    const requests = await prisma.groupChatMember.findMany({
+      where: {
+        groupChatId: req.params.id,
+        rejoinRequested: true,
+        leftAt: { not: null }
+      },
+      include: {
+        user: { select: { id: true, name: true, major: true } }
+      }
+    })
+
+    res.json(requests.map(r => ({
+      userId: r.userId,
+      name: r.user.name,
+      major: r.user.major,
+      requestedAt: r.leftAt
+    })))
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch rejoin requests' })
+  }
+})
 module.exports = router

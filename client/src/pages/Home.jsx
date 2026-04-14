@@ -51,15 +51,16 @@ export default function Home() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-ncat-blue shadow-lg">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-ncat-gold rounded-full flex items-center justify-center">
-              <span className="text-ncat-blue font-bold text-sm">A&T</span>
-            </div>
+          <div 
+           className="flex items-center gap-3 cursor-pointer"
+           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+           >
+            <Logo size={40} />
             <div>
-              <span className="text-white font-bold text-xl">Aggie StudyBuddy</span>
-              <p className="text-blue-300 text-xs">North Carolina A&T State University</p>
-            </div>
-          </div>
+               <span className="text-white font-bold text-xl">Aggie StudyBuddy</span>
+                <p className="text-blue-300 text-xs">North Carolina A&T State University</p>
+                </div>
+                </div>
           <div className="flex items-center gap-4">
             <Link to="/login" className="text-white hover:text-ncat-gold transition font-medium hidden md:block">
               Log In

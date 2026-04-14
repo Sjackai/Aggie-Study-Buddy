@@ -6,69 +6,379 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Seeding database...')
 
-  // Create demo users
-  const password = await bcrypt.hash('Demo1234', 10)
+  const passwordHash = await bcrypt.hash('Aggies2026', 10)
 
-  const users = await Promise.all([
-    prisma.user.create({ data: { name: 'Sarah Johnson', email: 'sjohnson@aggies.ncat.edu', passwordHash: password, major: 'Engineering', year: 'Junior', bio: 'Love helping others with math and physics!', rating: 4.9 }}),
-    prisma.user.create({ data: { name: 'Michael Chen', email: 'mchen@aggies.ncat.edu', passwordHash: password, major: 'Computer Science', year: 'Senior', bio: 'Full stack dev, happy to help with coding!', rating: 4.8 }}),
-    prisma.user.create({ data: { name: 'Alexis Williams', email: 'awilliams@aggies.ncat.edu', passwordHash: password, major: 'Physics', year: 'Sophomore', bio: 'Physics tutor with 2 years experience.', rating: 4.7 }}),
-    prisma.user.create({ data: { name: 'David Brown', email: 'dbrown@aggies.ncat.edu', passwordHash: password, major: 'Engineering', year: 'Senior', bio: 'Dean\'s list student, available evenings.', rating: 4.9 }}),
-    prisma.user.create({ data: { name: 'Jessica Taylor', email: 'jtaylor@aggies.ncat.edu', passwordHash: password, major: 'Chemistry', year: 'Junior', bio: 'Chem major who loves study groups!', rating: 4.6 }}),
-    prisma.user.create({ data: { name: 'Kevin Anderson', email: 'kanderson@aggies.ncat.edu', passwordHash: password, major: 'Computer Science', year: 'Senior', bio: 'Data structures and algorithms are my thing.', rating: 4.8 }}),
-    prisma.user.create({ data: { name: 'Nia Carter', email: 'ncarter@aggies.ncat.edu', passwordHash: password, major: 'Computer Science', year: 'Junior', bio: 'Mobile and web dev enthusiast.', rating: 4.7 }}),
-    prisma.user.create({ data: { name: 'Jordan Lee', email: 'jlee@aggies.ncat.edu', passwordHash: password, major: 'English', year: 'Senior', bio: 'Writing tutor and essay coach.', rating: 4.6 }}),
-  ])
+  // Main account
+  const stanley = await prisma.user.create({
+    data: {
+      name: 'Stanley E. Jackai',
+      email: 'sjackai27@gmail.com',
+      passwordHash: await bcrypt.hash('Aggies2026', 10),
+      major: 'Computer Science',
+      year: 'Junior',
+      bio: 'CS junior who loves building things. Always down to study COMP courses!',
+      isPrivate: false
+    }
+  })
 
-  console.log(`Created ${users.length} users`)
+  // Computer Science students
+  const cs1 = await prisma.user.create({
+    data: {
+      name: 'Marcus Williams',
+      email: 'mwilliams@aggies.ncat.edu',
+      passwordHash,
+      major: 'Computer Science',
+      year: 'Sophomore',
+      bio: 'Trying to survive COMP 285. Need all the study groups I can get lol',
+      isPrivate: false
+    }
+  })
 
-  // Create study sessions
-  const sessions = await Promise.all([
-    prisma.session.create({ data: { courseCode: 'MATH 131', courseName: 'Calculus I', date: '2026-04-07', time: '14:00', location: 'Bluford Library', description: 'Review for Exam 1 - Derivatives and limits', maxParticipants: 5, hostId: users[0].id }}),
-    prisma.session.create({ data: { courseCode: 'COMP 285', courseName: 'Programming I', date: '2026-04-07', time: '16:30', location: 'McNair Hall', description: 'Java help - Arrays and Loops', maxParticipants: 4, hostId: users[1].id }}),
-    prisma.session.create({ data: { courseCode: 'PHYS 241', courseName: 'Physics I', date: '2026-04-07', time: '18:00', location: 'Smith Hall', description: 'Kinematics practice problems', maxParticipants: 4, hostId: users[2].id }}),
-    prisma.session.create({ data: { courseCode: 'ENGL 101', courseName: 'English Composition', date: '2026-04-07', time: '19:30', location: 'GCB', description: 'Essay writing workshop', maxParticipants: 8, hostId: users[7].id }}),
-    prisma.session.create({ data: { courseCode: 'CHEM 101', courseName: 'General Chemistry', date: '2026-04-08', time: '13:00', location: 'Marteena Hall', description: 'Stoichiometry and lab report review', maxParticipants: 6, hostId: users[4].id }}),
-    prisma.session.create({ data: { courseCode: 'COMP 350', courseName: 'Data Structures', date: '2026-04-08', time: '15:00', location: 'Merrick Hall', description: 'Binary trees and recursion', maxParticipants: 5, hostId: users[5].id }}),
-    prisma.session.create({ data: { courseCode: 'COMP 200', courseName: 'Mobile App Dev', date: '2026-04-08', time: '17:00', location: 'Martin Sr. Engineering Complex', description: 'React Native UI debugging', maxParticipants: 6, hostId: users[6].id }}),
-    prisma.session.create({ data: { courseCode: 'MATH 151', courseName: 'Calculus II', date: '2026-04-09', time: '13:00', location: 'Crosby Hall', description: 'Integration techniques practice', maxParticipants: 4, hostId: users[3].id }}),
-  ])
+  const cs2 = await prisma.user.create({
+    data: {
+      name: 'Aaliyah Thompson',
+      email: 'athompson@aggies.ncat.edu',
+      passwordHash,
+      major: 'Computer Science',
+      year: 'Junior',
+      bio: 'Junior CS student. Currently taking Data Structures and Networks.',
+      isPrivate: false
+    }
+  })
 
-  console.log(`Created ${sessions.length} sessions`)
+  const cs3 = await prisma.user.create({
+    data: {
+      name: 'Jordan Pierce',
+      email: 'jpierce@aggies.ncat.edu',
+      passwordHash,
+      major: 'Computer Science',
+      year: 'Senior',
+      bio: 'Senior finishing up my CS degree. Looking for study partners for my last few classes.',
+      isPrivate: false
+    }
+  })
 
-  // Add some members to sessions
-  await Promise.all([
-    prisma.sessionMember.create({ data: { sessionId: sessions[0].id, userId: users[1].id }}),
-    prisma.sessionMember.create({ data: { sessionId: sessions[0].id, userId: users[2].id }}),
-    prisma.sessionMember.create({ data: { sessionId: sessions[1].id, userId: users[3].id }}),
-    prisma.sessionMember.create({ data: { sessionId: sessions[2].id, userId: users[4].id }}),
-    prisma.sessionMember.create({ data: { sessionId: sessions[2].id, userId: users[5].id }}),
-    prisma.sessionMember.create({ data: { sessionId: sessions[3].id, userId: users[6].id }}),
-    prisma.sessionMember.create({ data: { sessionId: sessions[4].id, userId: users[7].id }}),
-  ])
+  const cs4 = await prisma.user.create({
+    data: {
+      name: 'Destiny Hall',
+      email: 'dhall@aggies.ncat.edu',
+      passwordHash,
+      major: 'Computer Science',
+      year: 'Freshman',
+      bio: 'First year CS student still figuring things out. Study groups help a lot!',
+      isPrivate: false
+    }
+  })
 
-  console.log('Added session members')
+  // Electrical Engineering students
+  const ee1 = await prisma.user.create({
+    data: {
+      name: 'Darius Johnson',
+      email: 'djohnson@aggies.ncat.edu',
+      passwordHash,
+      major: 'Electrical Engineering',
+      year: 'Junior',
+      bio: 'EE junior drowning in circuits. Always looking for people to study with.',
+      isPrivate: false
+    }
+  })
 
-  // Add some connections
-  await Promise.all([
-    prisma.connection.create({ data: { fromUserId: users[0].id, toUserId: users[1].id, status: 'accepted' }}),
-    prisma.connection.create({ data: { fromUserId: users[1].id, toUserId: users[2].id, status: 'accepted' }}),
-    prisma.connection.create({ data: { fromUserId: users[2].id, toUserId: users[3].id, status: 'pending' }}),
-  ])
+  const ee2 = await prisma.user.create({
+    data: {
+      name: 'Imani Davis',
+      email: 'idavis@aggies.ncat.edu',
+      passwordHash,
+      major: 'Electrical Engineering',
+      year: 'Sophomore',
+      bio: 'Second year EE student. ECEN 202 is no joke.',
+      isPrivate: false
+    }
+  })
 
-  console.log('Added connections')
-  console.log('✅ Database seeded successfully!')
-  console.log('Demo login: sjohnson@aggies.ncat.edu / Demo1234')
+  // Mechanical Engineering students
+  const me1 = await prisma.user.create({
+    data: {
+      name: 'Tyler Brooks',
+      email: 'tbrooks@aggies.ncat.edu',
+      passwordHash,
+      major: 'Mechanical Engineering',
+      year: 'Junior',
+      bio: 'ME junior. Thermodynamics study groups are my lifeline.',
+      isPrivate: false
+    }
+  })
+
+  const me2 = await prisma.user.create({
+    data: {
+      name: 'Jasmine Carter',
+      email: 'jcarter@aggies.ncat.edu',
+      passwordHash,
+      major: 'Mechanical Engineering',
+      year: 'Senior',
+      bio: 'Senior ME student. Almost done!',
+      isPrivate: false
+    }
+  })
+
+  // Business students
+  const biz1 = await prisma.user.create({
+    data: {
+      name: 'Kevin Anderson',
+      email: 'kanderson@aggies.ncat.edu',
+      passwordHash,
+      major: 'Business Administration',
+      year: 'Sophomore',
+      bio: 'Business sophomore. Finance and accounting are tough but we get through it together.',
+      isPrivate: false
+    }
+  })
+
+  const biz2 = await prisma.user.create({
+    data: {
+      name: 'Brianna Moore',
+      email: 'bmoore@aggies.ncat.edu',
+      passwordHash,
+      major: 'Marketing',
+      year: 'Junior',
+      bio: 'Marketing junior. Group projects are my thing.',
+      isPrivate: false
+    }
+  })
+
+  // Biology students
+  const bio1 = await prisma.user.create({
+    data: {
+      name: 'Alexis Washington',
+      email: 'awashington@aggies.ncat.edu',
+      passwordHash,
+      major: 'Biology',
+      year: 'Sophomore',
+      bio: 'Bio sophomore pre-med. Ochem is rough, need study partners!',
+      isPrivate: false
+    }
+  })
+
+  const bio2 = await prisma.user.create({
+    data: {
+      name: 'Noah Green',
+      email: 'ngreen@aggies.ncat.edu',
+      passwordHash,
+      major: 'Biology',
+      year: 'Junior',
+      bio: 'Junior biology student. Always down to study for exams.',
+      isPrivate: false
+    }
+  })
+
+  // Math students
+  const math1 = await prisma.user.create({
+    data: {
+      name: 'Zoe Robinson',
+      email: 'zrobinson@aggies.ncat.edu',
+      passwordHash,
+      major: 'Mathematics',
+      year: 'Junior',
+      bio: 'Math junior. Calculus and linear algebra study groups welcome!',
+      isPrivate: false
+    }
+  })
+
+  // Psychology students
+  const psy1 = await prisma.user.create({
+    data: {
+      name: 'Maya Jenkins',
+      email: 'mjenkins@aggies.ncat.edu',
+      passwordHash,
+      major: 'Psychology',
+      year: 'Senior',
+      bio: 'Psych senior writing my thesis. Looking for people to bounce ideas off.',
+      isPrivate: false
+    }
+  })
+
+  // Nursing students
+  const nur1 = await prisma.user.create({
+    data: {
+      name: 'Kayla Foster',
+      email: 'kfoster@aggies.ncat.edu',
+      passwordHash,
+      major: 'Nursing',
+      year: 'Junior',
+      bio: 'Nursing junior. Clinical rotations are wild but study groups keep me sane.',
+      isPrivate: false
+    }
+  })
+
+  console.log('Created users!')
+
+  // Add preferences for seed users
+  const allUsers = [cs1, cs2, cs3, cs4, ee1, ee2, me1, me2, biz1, biz2, bio1, bio2, math1, psy1, nur1]
+
+  const coursesByMajor = {
+    'Computer Science': ['COMP 163', 'COMP 280', 'COMP 285', 'COMP 333', 'COMP 350'],
+    'Electrical Engineering': ['ECEN 202', 'ECEN 301', 'ECEN 350', 'MATH 232'],
+    'Mechanical Engineering': ['MEEN 261', 'MEEN 340', 'MEEN 351', 'MATH 232'],
+    'Business Administration': ['ACCT 221', 'BUSI 301', 'FINA 311', 'MGMT 301'],
+    'Marketing': ['MKTG 301', 'MKTG 350', 'BUSI 301'],
+    'Biology': ['BIOL 201', 'BIOL 301', 'CHEM 201', 'CHEM 301'],
+    'Mathematics': ['MATH 232', 'MATH 333', 'MATH 435'],
+    'Psychology': ['PSYC 201', 'PSYC 301', 'PSYC 401'],
+    'Nursing': ['NURS 301', 'BIOL 201', 'CHEM 201']
+  }
+
+  for (const user of allUsers) {
+    const courses = coursesByMajor[user.major] || []
+    await prisma.userPreferences.create({
+      data: {
+        userId: user.id,
+        courses,
+        studyStyle: ['small', 'medium', 'any'][Math.floor(Math.random() * 3)],
+        studyTime: ['morning', 'afternoon', 'evening', 'latenight'][Math.floor(Math.random() * 4)],
+        goals: 'find_partners,exam_prep'
+      }
+    })
+  }
+
+  console.log('Created preferences!')
+
+  // Create some upcoming sessions
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const nextWeek = new Date(today)
+  nextWeek.setDate(nextWeek.getDate() + 7)
+  const inTwoDays = new Date(today)
+  inTwoDays.setDate(inTwoDays.getDate() + 2)
+  const inThreeDays = new Date(today)
+  inThreeDays.setDate(inThreeDays.getDate() + 3)
+
+  const formatDate = (d) => d.toISOString().split('T')[0]
+
+  const sessions = [
+    {
+      hostId: cs1.id,
+      courseCode: 'COMP 285',
+      courseName: 'Data Structures',
+      date: formatDate(tomorrow),
+      time: '14:00',
+      location: 'Bluford Library',
+      description: 'Going over trees and graphs for the upcoming exam',
+      maxParticipants: 5,
+      tags: ['#examreview', '#studysession']
+    },
+    {
+      hostId: cs2.id,
+      courseCode: 'COMP 163',
+      courseName: 'Intro to Computer Science',
+      date: formatDate(inTwoDays),
+      time: '10:00',
+      location: 'McNair Hall',
+      description: 'Working through the homework assignments together',
+      maxParticipants: 4,
+      tags: ['#homework', '#groupwork']
+    },
+    {
+      hostId: ee1.id,
+      courseCode: 'ECEN 202',
+      courseName: 'Circuit Analysis',
+      date: formatDate(inThreeDays),
+      time: '16:00',
+      location: 'Martin Sr. Engineering Complex',
+      description: 'Practice problems for the midterm',
+      maxParticipants: 6,
+      tags: ['#testprep', '#practiceproblems']
+    },
+    {
+      hostId: me1.id,
+      courseCode: 'MEEN 261',
+      courseName: 'Engineering Mechanics',
+      date: formatDate(nextWeek),
+      time: '13:00',
+      location: 'Price Hall',
+      description: 'Statics and dynamics review session',
+      maxParticipants: 5,
+      tags: ['#studysession', '#examreview']
+    },
+    {
+      hostId: bio1.id,
+      courseCode: 'CHEM 201',
+      courseName: 'Organic Chemistry I',
+      date: formatDate(tomorrow),
+      time: '18:00',
+      location: 'Crosby Hall',
+      description: 'Reaction mechanisms study group',
+      maxParticipants: 4,
+      tags: ['#intense', '#examreview']
+    },
+    {
+      hostId: math1.id,
+      courseCode: 'MATH 232',
+      courseName: 'Calculus III',
+      date: formatDate(inTwoDays),
+      time: '15:00',
+      location: 'Bluford Library',
+      description: 'Working through multivariable calculus problems',
+      maxParticipants: 6,
+      tags: ['#practiceproblems', '#homework']
+    },
+    {
+      hostId: cs3.id,
+      courseCode: 'COMP 350',
+      courseName: 'Software Engineering',
+      date: formatDate(inThreeDays),
+      time: '17:00',
+      location: 'McNair Hall',
+      description: 'Project planning and design patterns discussion',
+      maxParticipants: 5,
+      tags: ['#projectwork', '#discussion']
+    },
+    {
+      hostId: biz1.id,
+      courseCode: 'ACCT 221',
+      courseName: 'Financial Accounting',
+      date: formatDate(nextWeek),
+      time: '11:00',
+      location: 'Merrick Hall',
+      description: 'Balance sheets and income statements review',
+      maxParticipants: 4,
+      tags: ['#studysession', '#testprep']
+    }
+  ]
+
+  for (const sessionData of sessions) {
+    const session = await prisma.session.create({ data: sessionData })
+
+    const expiresAt = new Date(sessionData.date)
+    expiresAt.setDate(expiresAt.getDate() + 1)
+
+    const groupChat = await prisma.groupChat.create({
+      data: {
+        name: `${sessionData.courseCode} Study Session`,
+        sessionId: session.id,
+        expiresAt
+      }
+    })
+
+    await prisma.groupChatMember.create({
+      data: { groupChatId: groupChat.id, userId: sessionData.hostId }
+    })
+
+    await prisma.groupChatMessage.create({
+      data: {
+        groupChatId: groupChat.id,
+        senderId: sessionData.hostId,
+        text: `Group chat created for ${sessionData.courseCode} Study Session`,
+        isSystem: true
+      }
+    })
+  }
+
+  console.log('Created sessions!')
+  console.log('✅ Seed complete!')
+  console.log('Main account: sjackai27@gmail.com / Aggies2026')
+  console.log('All seed accounts password: Aggies2026')
 }
 
-console.log('Script started')
-
 main()
-  .then(() => console.log('Done!'))
-  .catch(e => {
-    console.error('ERROR:', e.message)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+  .catch(console.error)
+  .finally(() => prisma.$disconnect())

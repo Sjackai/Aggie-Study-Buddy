@@ -15,23 +15,21 @@ model User {
   major        String?
   year         String?
   bio          String?
-  rating       Float    @default(0)
   avatar       String?
+  isPrivate    Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  hostedSessions   Session[]       @relation("SessionHost")
-  sessionMembers   SessionMember[]
-  connectionsFrom  Connection[]    @relation("ConnectionFrom")
-  connectionsTo    Connection[]    @relation("ConnectionTo")
-  sentMessages     Message[]       @relation("MessageSender")
-  receivedMessages Message[]       @relation("MessageReceiver")
-  kudosGiven     Kudos[]      @relation("KudosFrom")
-  kudosReceived  Kudos[]      @relation("KudosTo")
-  starzGiven     BuddyStarz[] @relation("StarzFrom")
-  starzReceived  BuddyStarz[] @relation("StarzTo")
-
-groupChatMembers  GroupChatMember[]
-groupChatMessages GroupChatMessage[]
+  hostedSessions    Session[]         @relation("SessionHost")
+  sessionMembers    SessionMember[]
+  connectionsFrom   Connection[]      @relation("ConnectionFrom")
+  connectionsTo     Connection[]      @relation("ConnectionTo")
+  sentMessages      Message[]         @relation("MessageSender")
+  receivedMessages  Message[]         @relation("MessageReceiver")
+  kudosGiven        Kudos[]           @relation("KudosFrom")
+  kudosReceived     Kudos[]           @relation("KudosTo")
+  groupChatMembers  GroupChatMember[]
+  groupChatMessages GroupChatMessage[]
+  preferences       UserPreferences?
 }
 
 model Session {
@@ -44,14 +42,13 @@ model Session {
   description     String?
   maxParticipants Int      @default(6)
   status          String   @default("open")
+  tags            String[]
   createdAt       DateTime @default(now())
 
-  host    User   @relation("SessionHost", fields: [hostId], references: [id])
-  hostId  String
-
-  members SessionMember[]
-  kudos      Kudos[]
-  buddyStarz BuddyStarz[]
+  host      User            @relation("SessionHost", fields: [hostId], references: [id])
+  hostId    String
+  members   SessionMember[]
+  kudos     Kudos[]
   groupChat GroupChat?
 }
 
@@ -82,6 +79,9 @@ model Message {
   id        String   @id @default(cuid())
   text      String
   read      Boolean  @default(false)
+  isRequest Boolean  @default(false)
+  accepted  Boolean  @default(false)
+  declined  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   sender     User   @relation("MessageSender", fields: [senderId], references: [id])
@@ -92,6 +92,7 @@ model Message {
 
   sessionId String?
 }
+
 model Kudos {
   id        String   @id @default(cuid())
   tag       String
@@ -107,20 +108,6 @@ model Kudos {
   sessionId String
 }
 
-model BuddyStarz {
-  id        String   @id @default(cuid())
-  amount    Float    @default(0)
-  createdAt DateTime @default(now())
-
-  fromUser   User   @relation("StarzFrom", fields: [fromUserId], references: [id])
-  fromUserId String
-
-  toUser   User   @relation("StarzTo", fields: [toUserId], references: [id])
-  toUserId String
-
-  session   Session @relation(fields: [sessionId], references: [id])
-  sessionId String
-}
 model GroupChat {
   id        String   @id @default(cuid())
   name      String
@@ -128,16 +115,18 @@ model GroupChat {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  session  Session          @relation(fields: [sessionId], references: [id])
+  session  Session           @relation(fields: [sessionId], references: [id])
   members  GroupChatMember[]
   messages GroupChatMessage[]
 }
 
 model GroupChatMember {
-  id        String   @id @default(cuid())
-  joinedAt  DateTime @default(now())
-  leftAt    DateTime?
-  approved  Boolean  @default(true)
+  id              String    @id @default(cuid())
+  joinedAt        DateTime  @default(now())
+  leftAt          DateTime?
+  approved        Boolean   @default(true)
+  lastRead        DateTime  @default(now())
+  rejoinRequested Boolean   @default(false)
 
   groupChat   GroupChat @relation(fields: [groupChatId], references: [id])
   groupChatId String
@@ -149,6 +138,7 @@ model GroupChatMember {
 model GroupChatMessage {
   id        String   @id @default(cuid())
   text      String
+  isSystem  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   groupChat   GroupChat @relation(fields: [groupChatId], references: [id])
@@ -156,4 +146,17 @@ model GroupChatMessage {
 
   sender   User   @relation(fields: [senderId], references: [id])
   senderId String
+}
+
+model UserPreferences {
+  id         String   @id @default(cuid())
+  studyStyle String?
+  studyTime  String?
+  goals      String?
+  courses    String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
 }

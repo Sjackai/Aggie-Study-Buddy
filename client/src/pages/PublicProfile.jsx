@@ -79,7 +79,7 @@ export default function PublicProfile() {
       await axios.post(`${API_URL}/api/connections`, { toUserId: userId }, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      showToast(`Connection request sent! 🤝`)
+      showToast('Connection request sent! 🤝')
     } catch (err) {
       showToast(err.response?.data?.error || 'Failed to send request', 'error')
     }
@@ -94,7 +94,7 @@ export default function PublicProfile() {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      navigate('/messages')
+      navigate(`/messages?userId=${userId}`)
     } catch (err) {
       showToast('Failed to send message', 'error')
     }
@@ -136,7 +136,10 @@ export default function PublicProfile() {
 
       {/* Navbar */}
       <nav className="bg-ncat-blue px-8 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate('/dashboard')}
+        >
           <Logo size={36} />
           <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
         </div>
@@ -153,30 +156,17 @@ export default function PublicProfile() {
         {/* Profile Header */}
         <div className="bg-ncat-blue rounded-2xl p-8 mb-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-32 translate-x-32" />
-          
+
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            {/* Avatar */}
             <div className={`w-24 h-24 ${getColor(profile.name)} rounded-full flex items-center justify-center text-white font-bold text-3xl flex-shrink-0 border-4 border-ncat-gold`}>
               {getInitials(profile.name)}
             </div>
 
-            {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-                <h1 className="text-3xl font-bold text-white">{profile.name}</h1>
-                {kudosData && (
-                  <span className="inline-flex items-center gap-1 bg-white bg-opacity-20 text-white text-sm font-bold px-3 py-1 rounded-full">
-                    {kudosData.tier.emoji} {kudosData.tier.label}
-                  </span>
-                )}
-              </div>
+              <h1 className="text-3xl font-bold text-white mb-2">{profile.name}</h1>
               <p className="text-blue-200 mb-1">{profile.major || 'Undeclared'} · {profile.year || 'N/A'}</p>
-              {kudosData && (
-                <p className="text-ncat-gold font-bold">⭐ {kudosData.totalStarz} BuddyStarz</p>
-              )}
             </div>
 
-            {/* Action buttons — only show if not own profile */}
             {!isOwnProfile && (
               <div className="flex gap-2">
                 <button
@@ -213,7 +203,7 @@ export default function PublicProfile() {
           </div>
         )}
 
-        {/* BuddyStarz & Kudos */}
+        {/* Kudos */}
         {kudosData && Object.keys(kudosData.tagCounts).length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
             <h2 className="text-lg font-bold text-ncat-blue mb-4">Kudos Received 🏅</h2>

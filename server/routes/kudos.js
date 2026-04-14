@@ -5,7 +5,7 @@ const authMiddleware = require('../middleware/auth')
 
 const prisma = new PrismaClient()
 
-// GET MY KUDOS AND STARZ
+// GET MY KUDOS
 router.get('/my', authMiddleware, async (req, res) => {
   try {
     const kudos = await prisma.kudos.findMany({
@@ -16,27 +16,13 @@ router.get('/my', authMiddleware, async (req, res) => {
       }
     })
 
-    const starz = await prisma.buddyStarz.findMany({
-      where: { toUserId: req.userId }
-    })
-
     const tagCounts = {}
     kudos.forEach(k => {
       if (!tagCounts[k.tag]) tagCounts[k.tag] = 0
       tagCounts[k.tag]++
     })
 
-    const totalStarz = Math.floor(starz.reduce((sum, s) => sum + s.amount, 0))
-
-    const getTier = (starz) => {
-      if (starz >= 2500) return { label: 'Legend', emoji: '👑' }
-      if (starz >= 1000) return { label: 'Platinum', emoji: '💎' }
-      if (starz >= 500) return { label: 'Gold', emoji: '🥇' }
-      if (starz >= 100) return { label: 'Silver', emoji: '🥈' }
-      return { label: 'Bronze', emoji: '🥉' }
-    }
-
-    res.json({ kudos, tagCounts, totalStarz, tier: getTier(totalStarz) })
+    res.json({ kudos, tagCounts })
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch kudos' })
   }
@@ -49,33 +35,19 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
       where: { toUserId: req.params.userId }
     })
 
-    const starz = await prisma.buddyStarz.findMany({
-      where: { toUserId: req.params.userId }
-    })
-
     const tagCounts = {}
     kudos.forEach(k => {
       if (!tagCounts[k.tag]) tagCounts[k.tag] = 0
       tagCounts[k.tag]++
     })
 
-    const totalStarz = Math.floor(starz.reduce((sum, s) => sum + s.amount, 0))
-
-    const getTier = (starz) => {
-      if (starz >= 2500) return { label: 'Legend', emoji: '👑' }
-      if (starz >= 1000) return { label: 'Platinum', emoji: '💎' }
-      if (starz >= 500) return { label: 'Gold', emoji: '🥇' }
-      if (starz >= 100) return { label: 'Silver', emoji: '🥈' }
-      return { label: 'Bronze', emoji: '🥉' }
-    }
-
-    res.json({ tagCounts, totalStarz, tier: getTier(totalStarz) })
+    res.json({ tagCounts })
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch kudos' })
   }
 })
 
-// GET SESSIONS ELIGIBLE FOR KUDOS (ended in last 24hrs, not yet given kudos)
+// GET SESSIONS ELIGIBLE FOR KUDOS
 router.get('/eligible', authMiddleware, async (req, res) => {
   try {
     const now = new Date()
@@ -83,7 +55,6 @@ router.get('/eligible', authMiddleware, async (req, res) => {
     const todayStr = now.toISOString().split('T')[0]
     const yesterdayStr = yesterday.toISOString().split('T')[0]
 
-    // Get sessions user was in that ended in last 24hrs
     const sessions = await prisma.session.findMany({
       where: {
         date: { in: [todayStr, yesterdayStr] },
@@ -102,7 +73,6 @@ router.get('/eligible', authMiddleware, async (req, res) => {
       }
     })
 
-    // Filter out sessions where user already gave kudos to everyone
     const eligibleSessions = []
     for (const session of sessions) {
       const sessionUserIds = [
@@ -118,10 +88,7 @@ router.get('/eligible', authMiddleware, async (req, res) => {
       const pendingUsers = sessionUserIds.filter(id => !alreadyGivenTo.includes(id))
 
       if (pendingUsers.length > 0) {
-        eligibleSessions.push({
-          ...session,
-          pendingUsers
-        })
+        eligibleSessions.push({ ...session, pendingUsers })
       }
     }
 
@@ -131,11 +98,10 @@ router.get('/eligible', authMiddleware, async (req, res) => {
   }
 })
 
-// SEND KUDOS TO MULTIPLE PEOPLE IN A SESSION (1 tag per person)
+// SEND KUDOS
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { sessionId, kudosList } = req.body
-    // kudosList = [{ toUserId, tag }, { toUserId, tag }, ...]
 
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
@@ -144,13 +110,11 @@ router.post('/', authMiddleware, async (req, res) => {
 
     if (!session) return res.status(404).json({ error: 'Session not found' })
 
-    // Verify sender was in session
     const sessionUserIds = [session.hostId, ...session.members.map(m => m.userId)]
     if (!sessionUserIds.includes(req.userId)) {
       return res.status(403).json({ error: 'You were not in this session' })
     }
 
-    // Check 24hr window
     const sessionDate = new Date(session.date)
     const now = new Date()
     const diffHours = (now - sessionDate) / (1000 * 60 * 60)
@@ -158,44 +122,18 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Kudos window has expired (24 hours)' })
     }
 
-    // Process each kudos
     for (const { toUserId, tag } of kudosList) {
       if (!tag || !toUserId) continue
       if (!sessionUserIds.includes(toUserId)) continue
 
-      // Check if already sent kudos to this person for this session
       const existing = await prisma.kudos.findFirst({
         where: { fromUserId: req.userId, toUserId, sessionId }
       })
       if (existing) continue
 
-      // Create kudos
       await prisma.kudos.create({
         data: { fromUserId: req.userId, toUserId, sessionId, tag }
       })
-
-      // Calculate weighted BuddyStarz
-      const giverStarz = await prisma.buddyStarz.findMany({
-        where: { toUserId: req.userId }
-      })
-      const giverTotal = giverStarz.reduce((sum, s) => sum + s.amount, 0)
-
-      let starAmount = 1
-      if (giverTotal < 10) starAmount = 0.1
-      else if (giverTotal < 100) starAmount = 0.5
-      else if (giverTotal < 500) starAmount = 0.8
-      else starAmount = 1
-
-      // Max 1 BuddyStar per person per session
-      const existingStarz = await prisma.buddyStarz.findFirst({
-        where: { fromUserId: req.userId, toUserId, sessionId }
-      })
-
-      if (!existingStarz) {
-        await prisma.buddyStarz.create({
-          data: { fromUserId: req.userId, toUserId, sessionId, amount: starAmount }
-        })
-      }
     }
 
     res.json({ success: true })

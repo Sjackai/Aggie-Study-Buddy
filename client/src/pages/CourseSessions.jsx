@@ -79,10 +79,13 @@ export default function CourseSessions() {
 
       {/* Navbar */}
       <nav className="bg-ncat-blue px-8 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <Logo size={36} />
-          <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
-        </div>
+        <div 
+  className="flex items-center gap-3 cursor-pointer"
+  onClick={() => navigate('/dashboard')}
+>
+  <Logo size={36} />
+  <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
+</div>
         <button
           onClick={() => navigate('/find-sessions')}
           className="text-white hover:text-ncat-gold transition font-medium"

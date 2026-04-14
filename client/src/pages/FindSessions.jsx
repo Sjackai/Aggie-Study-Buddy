@@ -19,6 +19,7 @@ const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500',
 const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
 
 export default function FindSessions() {
+  const [cooldownInfo, setCooldownInfo] = useState(null)
   const navigate = useNavigate()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -56,19 +57,35 @@ export default function FindSessions() {
   }
 
   const handleJoin = async (sessionId) => {
-    const token = localStorage.getItem('token')
-    try {
-      await axios.post(`${API_URL}/api/sessions/${sessionId}/join`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      showToast('Joined session successfully! 🐾')
-      setSelectedSession(null)
-      fetchSessions(token)
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to join session', 'error')
+  const token = localStorage.getItem('token')
+  try {
+    await axios.post(`${API_URL}/api/sessions/${sessionId}/join`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    showToast('Joined! You\'ve been added to the group chat 💬')
+    setSelectedSession(null)
+    fetchSessions(token)
+  } catch (err) {
+    const data = err.response?.data
+    if (data?.cooldown) {
+      setCooldownInfo({ sessionId, minutesLeft: data.minutesLeft, canRequest: data.canRequest })
+    } else {
+      showToast(data?.error || 'Failed to join session', 'error')
     }
   }
-
+}
+const handleRequestRejoin = async (sessionId) => {
+  const token = localStorage.getItem('token')
+  try {
+    await axios.post(`${API_URL}/api/sessions/${sessionId}/request-rejoin`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    showToast('Rejoin request sent to host! 🙏')
+    setCooldownInfo(prev => ({ ...prev, canRequest: false }))
+  } catch (err) {
+    showToast(err.response?.data?.error || 'Failed to send request', 'error')
+  }
+}
   const courseCodes = ['All', ...new Set(sessions.map(s => s.courseCode))]
 
   const filtered = sessions.filter(s => {
@@ -98,10 +115,13 @@ export default function FindSessions() {
 
       {/* Navbar */}
       <nav className="bg-ncat-blue px-8 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <Logo size={36} />
-          <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
-        </div>
+        <div 
+  className="flex items-center gap-3 cursor-pointer"
+  onClick={() => navigate('/dashboard')}
+>
+  <Logo size={36} />
+  <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
+</div>
         <button
           onClick={() => navigate('/dashboard')}
           className="text-white hover:text-ncat-gold transition font-medium"
@@ -243,7 +263,44 @@ export default function FindSessions() {
           ))
         )}
       </div>
-
+{/* Cooldown Modal */}
+{cooldownInfo && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+      <div className="text-center mb-6">
+        <p className="text-4xl mb-3">⏳</p>
+        <h2 className="text-xl font-bold text-gray-800 mb-2">Cooldown Active</h2>
+        <p className="text-gray-500 text-sm leading-relaxed">
+          You must wait <span className="font-semibold text-ncat-blue">{cooldownInfo.minutesLeft} more minute{cooldownInfo.minutesLeft > 1 ? 's' : ''}</span> before rejoining.
+        </p>
+        {cooldownInfo.canRequest && (
+          <p className="text-gray-400 text-xs mt-2">Or ask the host to let you back in early.</p>
+        )}
+      </div>
+      <div className="flex flex-col gap-3">
+        {cooldownInfo.canRequest && (
+          <button
+            onClick={() => handleRequestRejoin(cooldownInfo.sessionId)}
+            className="w-full bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition"
+          >
+            🙏 Request Host to Let Me In
+          </button>
+        )}
+        {!cooldownInfo.canRequest && (
+          <div className="w-full bg-gray-100 text-gray-400 font-bold py-3 rounded-xl text-center text-sm">
+            Request already sent — waiting for host
+          </div>
+        )}
+        <button
+          onClick={() => setCooldownInfo(null)}
+          className="w-full border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {/* Session Detail Modal */}
       {selectedSession && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
