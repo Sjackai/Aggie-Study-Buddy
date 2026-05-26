@@ -14,6 +14,10 @@ const formatTime = (time) => {
   return `${hour}:${minutes} ${ampm}`
 }
 
+const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'
+const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500']
+const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
+
 export default function CourseSessions() {
   const navigate = useNavigate()
   const { courseCode } = useParams()
@@ -79,13 +83,13 @@ export default function CourseSessions() {
 
       {/* Navbar */}
       <nav className="bg-ncat-blue px-8 py-4 flex justify-between items-center">
-        <div 
-  className="flex items-center gap-3 cursor-pointer"
-  onClick={() => navigate('/dashboard')}
->
-  <Logo size={36} />
-  <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
-</div>
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate('/dashboard')}
+        >
+          <Logo size={36} />
+          <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
+        </div>
         <button
           onClick={() => navigate('/find-sessions')}
           className="text-white hover:text-ncat-gold transition font-medium"
@@ -131,11 +135,15 @@ export default function CourseSessions() {
                 </div>
                 <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
                 <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
-                <p className="text-gray-500 text-sm mb-3 cursor-pointer hover:text-ncat-blue transition"
-                onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+                <div
+                  className="flex items-center gap-2 mb-3 cursor-pointer group"
+                  onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
                 >
-                  👤 Host: <span className="hover:underline">{session.host?.name}</span>
-                  </p>
+                  <div className={`w-6 h-6 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs`}>
+                    {getInitials(session.host?.name)}
+                  </div>
+                  <span className="text-sm text-ncat-blue font-semibold group-hover:underline">{session.host?.name}</span>
+                </div>
                 {session.description && (
                   <p className="text-gray-600 text-sm bg-gray-50 rounded-lg p-2 mb-3">{session.description}</p>
                 )}
@@ -157,20 +165,40 @@ export default function CourseSessions() {
               <h2 className="text-xl font-bold text-ncat-blue">{selectedSession.courseCode}</h2>
               <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
             </div>
+
+            <div
+              className="flex items-center gap-3 mb-4 cursor-pointer group"
+              onClick={() => { setSelectedSession(null); navigate(`/profile/${selectedSession.host?.id}`) }}
+            >
+              <div className={`w-10 h-10 ${getColor(selectedSession.host?.name)} rounded-full flex items-center justify-center text-white font-bold`}>
+                {getInitials(selectedSession.host?.name)}
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Hosted by</p>
+                <p className="text-ncat-blue font-semibold group-hover:underline">{selectedSession.host?.name}</p>
+              </div>
+            </div>
+
             <p className="text-gray-500 text-sm mb-1">📅 {selectedSession.date} at {formatTime(selectedSession.time)}</p>
             <p className="text-gray-500 text-sm mb-1">📍 {selectedSession.location}</p>
-            <div 
-            className="flex items-center gap-2 mb-3 cursor-pointer group"
-            onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
-            >
-              <div className={`w-7 h-7 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0`}>
-                {getInitials(session.host?.name)}
-                </div>
-                <span className="text-sm text-ncat-blue font-semibold group-hover:underline">
-                  {session.host?.name}
-                  </span>
-                  </div>
             <p className="text-gray-500 text-sm mb-4">👥 {selectedSession.members?.length}/{selectedSession.maxParticipants} spots filled</p>
+
+            {selectedSession.members?.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-400 mb-2">Members joined</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedSession.members.map((member, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <div className={`w-8 h-8 ${getColor(member.user?.name || 'User')} rounded-full flex items-center justify-center text-white font-bold text-xs`}>
+                        {getInitials(member.user?.name || 'U')}
+                      </div>
+                      <span className="text-xs text-gray-600">{member.user?.name?.split(' ')[0]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedSession.description && (
               <div className="bg-gray-50 rounded-xl p-3 mb-4">
                 <p className="text-sm font-semibold text-gray-700 mb-1">About this session</p>

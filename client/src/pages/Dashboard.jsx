@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import API_URL from '../config'
 import hashtags from '../data/hashtags'
+import QuoteOfDay from '../components/QuoteOfDay'
 
 const formatTime = (time) => {
   if (!time) return ''
@@ -529,6 +530,10 @@ export default function Dashboard() {
               ))}
             </div>
           )}
+        </div>
+        {/* Quote of the Day */}
+        <div className="mt-8">
+          <QuoteOfDay />
         </div>
       </div>
 

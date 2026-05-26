@@ -62,18 +62,22 @@ router.post('/preferences', authMiddleware, async (req, res) => {
 // GET PUBLIC PROFILE
 router.get('/profile/:userId', authMiddleware, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.params.userId },
-      select: {
-        id: true,
-        name: true,
-        major: true,
-        year: true,
-        bio: true,
-        avatar: true,
-        createdAt: true
-      }
-    })
+   const user = await prisma.user.findUnique({
+  where: { id: req.params.userId },
+  select: {
+    id: true,
+    name: true,
+    major: true,
+    year: true,
+    bio: true,
+    avatar: true,
+    banners: true,
+    borderColor: true,
+    vibeTemplate: true,
+    vibeFill: true,
+    createdAt: true
+  }
+})
     if (!user) return res.status(404).json({ error: 'User not found' })
     res.json(user)
   } catch (err) {
@@ -86,7 +90,7 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, isPrivate: true, createdAt: true }
+     select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, banners: true, borderColor: true, vibeTemplate: true, vibeFill: true, isPrivate: true, createdAt: true }
     })
     res.json(user)
   } catch (err) {
@@ -202,12 +206,12 @@ router.get('/partners', authMiddleware, async (req, res) => {
 // UPDATE PROFILE
 router.put('/me', authMiddleware, async (req, res) => {
   try {
-    const { name, major, year, bio, avatar, isPrivate } = req.body
-    const user = await prisma.user.update({
-      where: { id: req.userId },
-      data: { name, major, year, bio, avatar, isPrivate },
-      select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, isPrivate: true }
-    })
+    const { name, major, year, bio, avatar, isPrivate, borderColor, vibeTemplate, vibeFill } = req.body
+const user = await prisma.user.update({
+  where: { id: req.userId },
+  data: { name, major, year, bio, avatar, isPrivate, borderColor, vibeTemplate, vibeFill },
+  select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, banners: true, borderColor: true, vibeTemplate: true, vibeFill: true, isPrivate: true }
+})
     res.json(user)
   } catch (err) {
     res.status(500).json({ error: 'Failed to update profile' })
