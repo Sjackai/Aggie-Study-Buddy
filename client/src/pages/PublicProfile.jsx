@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import API_URL from '../config'
@@ -52,6 +52,7 @@ export default function PublicProfile() {
   const [toast, setToast] = useState(null)
   const [activeBanner, setActiveBanner] = useState(0)
   const [bannerFading, setBannerFading] = useState(false)
+  const [showAvatarPopup, setShowAvatarPopup] = useState(false)
   const currentUser = JSON.parse(localStorage.getItem('user'))
 
   const showToast = (message, type = 'success') => {
@@ -67,7 +68,6 @@ export default function PublicProfile() {
     fetchSessions(token)
   }, [userId])
 
-  // Banner slideshow
   useEffect(() => {
     if (!profile?.banners || profile.banners.length <= 1) return
     const interval = setInterval(() => {
@@ -86,9 +86,7 @@ export default function PublicProfile() {
         headers: { Authorization: `Bearer ${token}` }
       })
       setProfile(res.data)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
     setLoading(false)
   }
 
@@ -98,9 +96,7 @@ export default function PublicProfile() {
         headers: { Authorization: `Bearer ${token}` }
       })
       setKudosData(res.data)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const fetchSessions = async (token) => {
@@ -111,9 +107,7 @@ export default function PublicProfile() {
       const today = new Date().toISOString().split('T')[0]
       const hosted = res.data.filter(s => s.hostId === userId && s.date >= today)
       setSessions(hosted)
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
   }
 
   const handleConnect = async () => {
@@ -123,9 +117,7 @@ export default function PublicProfile() {
         headers: { Authorization: `Bearer ${token}` }
       })
       showToast('Connection request sent! 🤝')
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to send request', 'error')
-    }
+    } catch (err) { showToast(err.response?.data?.error || 'Failed to send request', 'error') }
   }
 
   const handleMessage = async () => {
@@ -136,9 +128,7 @@ export default function PublicProfile() {
         text: `Hey ${profile?.name?.split(' ')[0]}! I'd love to study together 🐾`
       }, { headers: { Authorization: `Bearer ${token}` } })
       navigate(`/messages?userId=${userId}`)
-    } catch (err) {
-      showToast('Failed to send message', 'error')
-    }
+    } catch (err) { showToast('Failed to send message', 'error') }
   }
 
   if (loading) return (
@@ -179,38 +169,26 @@ export default function PublicProfile() {
           <Logo size={36} />
           <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
         </div>
-        <button onClick={() => navigate(-1)} className="text-white hover:text-ncat-gold transition font-medium">
-          ← Back
-        </button>
+        <button onClick={() => navigate(-1)} className="text-white hover:text-ncat-gold transition font-medium">← Back</button>
       </nav>
 
       <div className="max-w-3xl mx-auto px-6 py-8">
 
         {/* Banner Slideshow */}
         <div className="relative rounded-2xl overflow-hidden mb-0">
-          <div
-            className="w-full h-48 transition-opacity duration-500"
-            style={{
-              background: currentBanner ? 'transparent' : 'linear-gradient(135deg, #0039A6, #002580)',
-              opacity: bannerFading ? 0 : 1
-            }}
-          >
+          <div className="w-full h-48 transition-opacity duration-500"
+            style={{ background: currentBanner ? 'transparent' : 'linear-gradient(135deg, #0039A6, #002580)', opacity: bannerFading ? 0 : 1 }}>
             {currentBanner ? (
               <img src={currentBanner} alt="Banner" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-ncat-blue to-blue-800" />
             )}
           </div>
-
-          {/* Dot indicators */}
           {banners.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
               {banners.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveBanner(i)}
-                  className={`w-2 h-2 rounded-full transition ${i === activeBanner ? 'bg-white' : 'bg-white bg-opacity-50'}`}
-                />
+                <button key={i} onClick={() => setActiveBanner(i)}
+                  className={`w-2 h-2 rounded-full transition ${i === activeBanner ? 'bg-white' : 'bg-white bg-opacity-50'}`} />
               ))}
             </div>
           )}
@@ -222,11 +200,10 @@ export default function PublicProfile() {
 
             {/* Avatar */}
             <div className="relative -mt-12 flex-shrink-0">
-              <div
-                className="w-24 h-24 rounded-full flex-shrink-0"
+              <div className="w-24 h-24 rounded-full flex-shrink-0 cursor-pointer"
                 style={{ padding: '3px', background: borderColor }}
-              >
-                <div className="w-full h-full rounded-full overflow-hidden bg-ncat-blue flex items-center justify-center">
+                onClick={() => setShowAvatarPopup(true)}>
+                <div className="w-full h-full rounded-full overflow-hidden bg-ncat-blue flex items-center justify-center hover:opacity-90 transition">
                   {profile.avatar ? (
                     <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
                   ) : (
@@ -239,8 +216,6 @@ export default function PublicProfile() {
             <div className="flex-1 pt-3">
               <h1 className="text-2xl font-bold text-white mb-1">{profile.name}</h1>
               <p className="text-blue-200 text-sm mb-1">{profile.major || 'Undeclared'} · {profile.year || 'N/A'}</p>
-
-              {/* Vibe status */}
               {vibeStatus && (
                 <div className="mt-2 inline-flex items-center gap-2 bg-white bg-opacity-10 text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white border-opacity-20">
                   {vibeStatus}
@@ -248,7 +223,6 @@ export default function PublicProfile() {
               )}
             </div>
 
-            {/* Action buttons */}
             {!isOwnProfile && (
               <div className="flex gap-2 pt-3">
                 <button onClick={handleConnect}
@@ -284,13 +258,11 @@ export default function PublicProfile() {
           <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
             <h2 className="text-lg font-bold text-ncat-blue mb-4">Kudos Received 🏅</h2>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(kudosData.tagCounts)
-                .sort((a, b) => b[1] - a[1])
-                .map(([tag, count]) => (
-                  <span key={tag} className="bg-ncat-gold bg-opacity-20 text-ncat-blue text-sm font-semibold px-3 py-1.5 rounded-full border border-ncat-gold border-opacity-30">
-                    {tag} x{count}
-                  </span>
-                ))}
+              {Object.entries(kudosData.tagCounts).sort((a, b) => b[1] - a[1]).map(([tag, count]) => (
+                <span key={tag} className="bg-ncat-gold bg-opacity-20 text-ncat-blue text-sm font-semibold px-3 py-1.5 rounded-full border border-ncat-gold border-opacity-30">
+                  {tag} x{count}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -303,9 +275,7 @@ export default function PublicProfile() {
               <div key={i} className={`p-4 rounded-xl border text-center transition ${achievement.earned ? 'border-ncat-gold bg-yellow-50' : 'border-gray-100 bg-gray-50 opacity-40'}`}>
                 <div className="text-3xl mb-2">{achievement.icon}</div>
                 <p className={`font-bold text-xs mb-1 ${achievement.earned ? 'text-ncat-blue' : 'text-gray-400'}`}>{achievement.title}</p>
-                {achievement.earned && (
-                  <span className="inline-block mt-1 bg-ncat-gold text-ncat-blue text-xs font-bold px-2 py-0.5 rounded-full">Earned!</span>
-                )}
+                {achievement.earned && <span className="inline-block mt-1 bg-ncat-gold text-ncat-blue text-xs font-bold px-2 py-0.5 rounded-full">Earned!</span>}
               </div>
             ))}
           </div>
@@ -333,6 +303,29 @@ export default function PublicProfile() {
           </div>
         )}
       </div>
+
+      {/* Avatar Popup */}
+      {showAvatarPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-end justify-center z-50 pb-12"
+          onClick={() => setShowAvatarPopup(false)}>
+          <div className="flex flex-col items-center gap-4" onClick={e => e.stopPropagation()}>
+            <div className="rounded-full overflow-hidden border-4"
+              style={{ width: '320px', height: '320px', borderColor: borderColor }}>
+              {profile.avatar ? (
+                <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className={`w-full h-full ${getColor(profile.name)} flex items-center justify-center`}>
+                  <span className="text-white font-bold" style={{ fontSize: '100px' }}>
+                    {getInitials(profile.name)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-white font-bold text-xl">{profile.name}</p>
+            <p className="text-gray-400 text-sm">Tap anywhere to close</p>
+          </div>
+        </div>
+      )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>

@@ -64,33 +64,15 @@ async function getCroppedBlob(imgElement, crop, aspect) {
   const canvas = document.createElement('canvas')
   const outputWidth = aspect === 1 ? 400 : 1200
   const outputHeight = aspect === 1 ? 400 : 400
-
   canvas.width = outputWidth
   canvas.height = outputHeight
-
   const ctx = canvas.getContext('2d')
   ctx.imageSmoothingQuality = 'high'
-
   const scaleX = imgElement.naturalWidth / imgElement.width
   const scaleY = imgElement.naturalHeight / imgElement.height
-
-  ctx.drawImage(
-    imgElement,
-    crop.x * scaleX,
-    crop.y * scaleY,
-    crop.width * scaleX,
-    crop.height * scaleY,
-    0,
-    0,
-    outputWidth,
-    outputHeight
-  )
-
+  ctx.drawImage(imgElement, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, outputWidth, outputHeight)
   return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => {
-      if (blob) resolve(blob)
-      else reject(new Error('Canvas is empty'))
-    }, 'image/jpeg', 0.95)
+    canvas.toBlob(blob => { if (blob) resolve(blob); else reject(new Error('Canvas is empty')) }, 'image/jpeg', 0.95)
   })
 }
 
@@ -107,21 +89,19 @@ export default function Profile() {
   const [uploadingBanner, setUploadingBanner] = useState(false)
   const [showVibeModal, setShowVibeModal] = useState(false)
   const [showBorderPicker, setShowBorderPicker] = useState(false)
+  const [showAvatarPopup, setShowAvatarPopup] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [selectedFill, setSelectedFill] = useState('')
   const [customBorderColor, setCustomBorderColor] = useState('#FFB81C')
   const [activeBanner, setActiveBanner] = useState(0)
   const [bannerFading, setBannerFading] = useState(false)
-
-  // Crop states
-  const [cropModal, setCropModal] = useState(null) // 'avatar' | 'banner' | null
+  const [cropModal, setCropModal] = useState(null)
   const [imgSrc, setImgSrc] = useState('')
   const [crop, setCrop] = useState()
   const [completedCrop, setCompletedCrop] = useState()
   const imgRef = useRef(null)
   const avatarInputRef = useRef(null)
   const bannerInputRef = useRef(null)
-
   const [form, setForm] = useState({ name: '', major: '', year: '', bio: '', isPrivate: false })
 
   const showToast = (message, type = 'success') => {
@@ -190,11 +170,7 @@ export default function Profile() {
     const file = e.target.files[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => {
-      setImgSrc(reader.result)
-      setCropModal(type)
-      setCrop(undefined)
-    }
+    reader.onload = () => { setImgSrc(reader.result); setCropModal(type); setCrop(undefined) }
     reader.readAsDataURL(file)
     e.target.value = ''
   }
@@ -206,63 +182,52 @@ export default function Profile() {
   }, [cropModal])
 
   const handleCropConfirm = async () => {
-  if (!completedCrop?.width || !completedCrop?.height || !imgRef.current) return
-  const aspect = cropModal === 'avatar' ? 1 : 3
-  const token = localStorage.getItem('token')
-
-  try {
-    if (cropModal === 'avatar') setUploadingAvatar(true)
-    else setUploadingBanner(true)
-
-    // Pass the img element's natural dimensions via a temp image
-    const blob = await getCroppedBlob(imgRef.current, completedCrop, aspect)
-    const formData = new FormData()
-    formData.append('image', blob, cropModal === 'avatar' ? 'avatar.jpg' : 'banner.jpg')
-
-    const endpoint = cropModal === 'avatar' ? '/api/upload/avatar' : '/api/upload/banner'
-    const res = await axios.post(`${API_URL}${endpoint}`, formData, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-    })
-
-    setUser(res.data)
-    localStorage.setItem('user', JSON.stringify(res.data))
-    showToast(cropModal === 'avatar' ? 'Profile picture updated! 📸' : 'Banner added! 🖼️')
-    setCropModal(null)
-    setImgSrc('')
-  } catch (err) {
-    console.error(err)
-    showToast(err.response?.data?.error || 'Failed to upload', 'error')
+    if (!completedCrop?.width || !completedCrop?.height || !imgRef.current) return
+    const aspect = cropModal === 'avatar' ? 1 : 3
+    const token = localStorage.getItem('token')
+    try {
+      if (cropModal === 'avatar') setUploadingAvatar(true)
+      else setUploadingBanner(true)
+      const blob = await getCroppedBlob(imgRef.current, completedCrop, aspect)
+      const formData = new FormData()
+      formData.append('image', blob, cropModal === 'avatar' ? 'avatar.jpg' : 'banner.jpg')
+      const endpoint = cropModal === 'avatar' ? '/api/upload/avatar' : '/api/upload/banner'
+      const res = await axios.post(`${API_URL}${endpoint}`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      })
+      setUser(res.data)
+      localStorage.setItem('user', JSON.stringify(res.data))
+      showToast(cropModal === 'avatar' ? 'Profile picture updated! 📸' : 'Banner added! 🖼️')
+      setCropModal(null)
+      setImgSrc('')
+    } catch (err) {
+      console.error(err)
+      showToast(err.response?.data?.error || 'Failed to upload', 'error')
+    }
+    setUploadingAvatar(false)
+    setUploadingBanner(false)
   }
 
-  setUploadingAvatar(false)
-  setUploadingBanner(false)
-}
   const handleRemoveBanner = async (url) => {
     const token = localStorage.getItem('token')
     try {
-      const res = await axios.delete(`${API_URL}/api/upload/banner`, {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { url }
-      })
+      const res = await axios.delete(`${API_URL}/api/upload/banner`, { headers: { Authorization: `Bearer ${token}` }, data: { url } })
       setUser(res.data)
       localStorage.setItem('user', JSON.stringify(res.data))
       setActiveBanner(0)
       showToast('Banner removed')
     } catch (err) { showToast('Failed to remove banner', 'error') }
   }
+
   const handleRemoveAvatar = async () => {
-  const token = localStorage.getItem('token')
-  try {
-    const res = await axios.delete(`${API_URL}/api/upload/avatar`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    setUser(res.data)
-    localStorage.setItem('user', JSON.stringify(res.data))
-    showToast('Profile picture removed')
-  } catch (err) {
-    showToast('Failed to remove avatar', 'error')
+    const token = localStorage.getItem('token')
+    try {
+      const res = await axios.delete(`${API_URL}/api/upload/avatar`, { headers: { Authorization: `Bearer ${token}` } })
+      setUser(res.data)
+      localStorage.setItem('user', JSON.stringify(res.data))
+      showToast('Profile picture removed')
+    } catch (err) { showToast('Failed to remove avatar', 'error') }
   }
-}
 
   const handleSaveVibe = async () => {
     const token = localStorage.getItem('token')
@@ -363,10 +328,7 @@ export default function Profile() {
         <div className="relative rounded-2xl overflow-hidden mb-0 group">
           <div
             className="w-full h-48 flex items-center justify-center cursor-pointer transition-opacity duration-500"
-            style={{
-              background: currentBanner ? 'transparent' : 'linear-gradient(135deg, #0039A6, #002580)',
-              opacity: bannerFading ? 0 : 1
-            }}
+            style={{ background: currentBanner ? 'transparent' : 'linear-gradient(135deg, #0039A6, #002580)', opacity: bannerFading ? 0 : 1 }}
             onClick={() => { if (banners.length < 3) bannerInputRef.current?.click() }}
           >
             {currentBanner ? (
@@ -379,9 +341,7 @@ export default function Profile() {
               </div>
             )}
           </div>
-
           <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition pointer-events-none" />
-
           <div className="absolute top-3 right-3 flex gap-2">
             {banners.length < 3 && (
               <button onClick={() => bannerInputRef.current?.click()}
@@ -396,7 +356,6 @@ export default function Profile() {
               </button>
             )}
           </div>
-
           {banners.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
               {banners.map((_, i) => (
@@ -405,7 +364,6 @@ export default function Profile() {
               ))}
             </div>
           )}
-
           <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={e => onSelectFile(e, 'banner')} />
         </div>
 
@@ -415,10 +373,10 @@ export default function Profile() {
 
             {/* Avatar */}
             <div className="relative -mt-12 flex-shrink-0">
-              <div className="w-24 h-24 rounded-full cursor-pointer hover:opacity-90 transition flex-shrink-0"
-                style={{ padding: '3px', background: borderColor }}
-                onClick={() => avatarInputRef.current?.click()}>
-                <div className="w-full h-full rounded-full overflow-hidden bg-ncat-blue flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full hover:opacity-90 transition flex-shrink-0"
+                style={{ padding: '3px', background: borderColor }}>
+                <div className="w-full h-full rounded-full overflow-hidden bg-ncat-blue flex items-center justify-center cursor-pointer"
+                  onClick={() => avatarInputRef.current?.click()}>
                   {user?.avatar ? (
                     <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                   ) : (
@@ -432,22 +390,29 @@ export default function Profile() {
                 </div>
               )}
               <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={e => onSelectFile(e, 'avatar')} />
-              <button
-               onClick={() => setShowBorderPicker(true)}
-               className="absolute -bottom-1 -right-1 w-7 h-7 bg-ncat-gold rounded-full flex items-center justify-center text-ncat-blue text-xs font-bold hover:opacity-90 transition shadow-lg"
-               title="Change border color"
-               >
+
+              {/* Border picker button */}
+              <button onClick={() => setShowBorderPicker(true)}
+                className="absolute -bottom-1 -right-1 w-7 h-7 bg-ncat-gold rounded-full flex items-center justify-center text-ncat-blue text-xs font-bold hover:opacity-90 transition shadow-lg"
+                title="Change border color">
                 🎨
+              </button>
+
+              {/* View popup button */}
+              <button onClick={() => setShowAvatarPopup(true)}
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-ncat-blue text-xs font-bold hover:opacity-90 transition shadow-lg"
+                title="View profile picture">
+                👁️
+              </button>
+
+              {/* Remove avatar button */}
+              {user?.avatar && (
+                <button onClick={handleRemoveAvatar}
+                  className="absolute -top-1 -left-1 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-90 transition shadow-lg"
+                  title="Remove profile picture">
+                  ✕
                 </button>
-                {user?.avatar && (
-                   <button
-                    onClick={handleRemoveAvatar}
-                    className="absolute -top-1 -left-1 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold hover:opacity-90 transition shadow-lg"
-                     title="Remove profile picture"
-                     >
-                      ✕
-                      </button>
-                    )}
+              )}
             </div>
 
             <div className="flex-1 pt-3">
@@ -514,43 +479,31 @@ export default function Profile() {
         </div>
 
         {/* Bio */}
-<div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
-  <div className="flex justify-between items-center mb-3">
-    <h2 className="text-lg font-bold text-ncat-blue">About Me</h2>
-    {!editing && (
-      <button
-        onClick={() => setEditing(true)}
-        className="text-xs text-ncat-blue font-semibold hover:underline transition"
-      >
-        ✏️ Edit
-      </button>
-    )}
-  </div>
-  {editing ? (
-    <div>
-      <textarea
-        value={form.bio}
-        onChange={e => setForm({...form, bio: e.target.value})}
-        placeholder="Tell other Aggies about yourself..."
-        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue h-24 resize-none mb-3"
-      />
-      <div className="flex gap-2 justify-end">
-        <button onClick={() => setEditing(false)}
-          className="text-xs border border-gray-200 text-gray-600 font-bold px-4 py-2 rounded-xl hover:bg-gray-50 transition">
-          Cancel
-        </button>
-        <button onClick={handleSave}
-          className="text-xs bg-ncat-gold text-ncat-blue font-bold px-4 py-2 rounded-xl hover:opacity-90 transition">
-          Save
-        </button>
-      </div>
-    </div>
-  ) : (
-    <p className="text-gray-600 leading-relaxed">
-      {user?.bio || 'No bio yet — click Edit to add one!'}
-    </p>
-  )}
-</div>
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-bold text-ncat-blue">About Me</h2>
+            {!editing && (
+              <button onClick={() => setEditing(true)} className="text-xs text-ncat-blue font-semibold hover:underline transition">
+                ✏️ Edit
+              </button>
+            )}
+          </div>
+          {editing ? (
+            <div>
+              <textarea value={form.bio} onChange={e => setForm({...form, bio: e.target.value})}
+                placeholder="Tell other Aggies about yourself..."
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue h-24 resize-none mb-3" />
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setEditing(false)}
+                  className="text-xs border border-gray-200 text-gray-600 font-bold px-4 py-2 rounded-xl hover:bg-gray-50 transition">Cancel</button>
+                <button onClick={handleSave}
+                  className="text-xs bg-ncat-gold text-ncat-blue font-bold px-4 py-2 rounded-xl hover:opacity-90 transition">Save</button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-600 leading-relaxed">{user?.bio || 'No bio yet — click Edit to add one!'}</p>
+          )}
+        </div>
 
         {/* Privacy Settings */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
@@ -624,6 +577,29 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Avatar Popup */}
+      {showAvatarPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-end justify-center z-50 pb-12"
+          onClick={() => setShowAvatarPopup(false)}>
+          <div className="flex flex-col items-center gap-4" onClick={e => e.stopPropagation()}>
+            <div className="rounded-full overflow-hidden border-4"
+              style={{ width: '320px', height: '320px', borderColor: borderColor }}>
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className={`w-full h-full ${getColor(user?.name)} flex items-center justify-center`}>
+                  <span className="text-white font-bold" style={{ fontSize: '100px' }}>
+                    {getInitials(user?.name)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-white font-bold text-xl">{user?.name}</p>
+            <p className="text-gray-400 text-sm">Tap anywhere to close</p>
+          </div>
+        </div>
+      )}
+
       {/* Crop Modal */}
       {cropModal && imgSrc && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-4">
@@ -634,39 +610,23 @@ export default function Profile() {
               </h2>
               <button onClick={() => { setCropModal(null); setImgSrc('') }} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
             </div>
-
             <p className="text-xs text-gray-400 mb-4">
               {cropModal === 'avatar' ? 'Drag to crop a square area for your profile picture' : 'Drag to crop a wide area for your banner'}
             </p>
-
             <div className="flex justify-center mb-4 max-h-80 overflow-auto">
-              <ReactCrop
-                crop={crop}
-                onChange={(_, percentCrop) => setCrop(percentCrop)}
+              <ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)}
                 onComplete={(c) => setCompletedCrop(c)}
                 aspect={cropModal === 'avatar' ? 1 : 3}
-                circularCrop={cropModal === 'avatar'}
-              >
-                <img
-                  ref={imgRef}
-                  src={imgSrc}
-                  alt="Crop preview"
-                  onLoad={onImageLoad}
-                  style={{ maxHeight: '300px', maxWidth: '100%' }}
-                />
+                circularCrop={cropModal === 'avatar'}>
+                <img ref={imgRef} src={imgSrc} alt="Crop preview" onLoad={onImageLoad}
+                  style={{ maxHeight: '300px', maxWidth: '100%' }} />
               </ReactCrop>
             </div>
-
             <div className="flex gap-3">
               <button onClick={() => { setCropModal(null); setImgSrc('') }}
-                className="flex-1 border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition">
-                Cancel
-              </button>
-              <button
-                onClick={handleCropConfirm}
-                disabled={uploadingAvatar || uploadingBanner}
-                className="flex-1 bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-40"
-              >
+                className="flex-1 border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition">Cancel</button>
+              <button onClick={handleCropConfirm} disabled={uploadingAvatar || uploadingBanner}
+                className="flex-1 bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-40">
                 {uploadingAvatar || uploadingBanner ? 'Uploading...' : 'Save & Upload ✓'}
               </button>
             </div>
@@ -710,13 +670,9 @@ export default function Profile() {
             )}
             <div className="flex gap-3">
               <button onClick={() => { setSelectedTemplate(''); setSelectedFill(''); handleSaveVibe() }}
-                className="flex-1 border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition text-sm">
-                Clear Vibe
-              </button>
+                className="flex-1 border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition text-sm">Clear Vibe</button>
               <button onClick={handleSaveVibe} disabled={!selectedTemplate}
-                className="flex-1 bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-40">
-                Save Vibe 🔥
-              </button>
+                className="flex-1 bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-40">Save Vibe 🔥</button>
             </div>
           </div>
         </div>
