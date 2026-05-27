@@ -278,9 +278,13 @@ export default function Dashboard() {
                     {notifications.connectionRequests.map(req => (
                       <div key={req.id} className="p-4 border-b border-gray-50">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className={`w-10 h-10 ${getColor(req.fromUser.name)} rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
-                            {getInitials(req.fromUser.name)}
-                          </div>
+                          <div className={`w-10 h-10 ${getColor(req.fromUser.name)} rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden`}>
+  {req.fromUser.avatar ? (
+    <img src={req.fromUser.avatar} alt={req.fromUser.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(req.fromUser.name)
+  )}
+</div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-800">{req.fromUser.name}</p>
                             <p className="text-xs text-gray-400 truncate">{req.fromUser.major} · wants to connect</p>
@@ -478,9 +482,13 @@ export default function Dashboard() {
                   <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
                   <p className="text-gray-500 text-sm mb-1">📍 {session.location}</p>
                   <div className="flex items-center gap-2 mb-3 cursor-pointer group" onClick={() => navigate(`/profile/${session.host?.id}`)}>
-                    <div className={`w-6 h-6 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs`}>
-                      {getInitials(session.host?.name)}
-                    </div>
+                    <div className={`w-6 h-6 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden`}>
+  {session.host?.avatar ? (
+    <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(session.host?.name)
+  )}
+</div>
                     <span className="text-sm text-ncat-blue font-semibold group-hover:underline">{session.host?.name}</span>
                   </div>
                   {session.description && (

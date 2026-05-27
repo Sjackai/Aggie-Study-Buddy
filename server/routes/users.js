@@ -127,24 +127,24 @@ router.get('/partners', authMiddleware, async (req, res) => {
         isPrivate: false
       },
       select: {
-        id: true,
-        name: true,
-        major: true,
-        year: true,
-        bio: true,
-        avatar: true,
-        preferences: true,
-        connectionsFrom: {
-          where: { status: 'accepted' },
-          select: { toUserId: true }
-        },
-        connectionsTo: {
-          where: { status: 'accepted' },
-          select: { fromUserId: true }
-        },
-        hostedSessions: { select: { id: true } },
-        sessionMembers: { select: { id: true } }
-      }
+  id: true,
+  name: true,
+  major: true,
+  year: true,
+  bio: true,
+  avatar: true,
+  preferences: true,
+  connectionsFrom: {
+    where: { status: 'accepted' },
+    select: { toUserId: true }
+  },
+  connectionsTo: {
+    where: { status: 'accepted' },
+    select: { fromUserId: true }
+  },
+  hostedSessions: { select: { id: true } },
+  sessionMembers: { select: { id: true } }
+}
     })
 
     const myCourses = currentUser.preferences?.courses || []

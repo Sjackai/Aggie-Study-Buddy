@@ -31,8 +31,8 @@ router.get('/', authMiddleware, async (req, res) => {
         ]
       },
       include: {
-        sender: { select: { id: true, name: true, major: true } },
-        receiver: { select: { id: true, name: true, major: true } }
+        sender: { select: { id: true, name: true, major: true, avatar: true } },
+receiver: { select: { id: true, name: true, major: true, avatar: true } }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -43,13 +43,14 @@ router.get('/', authMiddleware, async (req, res) => {
       const otherUser = msg.senderId === req.userId ? msg.receiver : msg.sender
       if (!threads[otherId]) {
         threads[otherId] = {
-          userId: otherId,
-          name: otherUser.name,
-          major: otherUser.major,
-          messages: [],
-          lastMessage: null,
-          unread: 0
-        }
+  userId: otherId,
+  name: otherUser.name,
+  major: otherUser.major,
+  avatar: otherUser.avatar,
+  messages: [],
+  lastMessage: null,
+  unread: 0
+}
       }
       threads[otherId].messages.push(msg)
       if (!threads[otherId].lastMessage) {
@@ -77,7 +78,7 @@ router.get('/requests', authMiddleware, async (req, res) => {
         declined: false
       },
       include: {
-        sender: { select: { id: true, name: true, major: true, year: true, isPrivate: true } }
+        sender: { select: { id: true, name: true, major: true, year: true, isPrivate: true, avatar: true } }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -87,13 +88,14 @@ router.get('/requests', authMiddleware, async (req, res) => {
     messages.forEach(msg => {
       if (!requests[msg.senderId]) {
         requests[msg.senderId] = {
-          userId: msg.senderId,
-          name: msg.sender.name,
-          major: msg.sender.major,
-          year: msg.sender.year,
-          messages: [],
-          firstMessage: null
-        }
+  userId: msg.senderId,
+  name: msg.sender.name,
+  major: msg.sender.major,
+  year: msg.sender.year,
+  avatar: msg.sender.avatar,
+  messages: [],
+  firstMessage: null
+}
       }
       requests[msg.senderId].messages.push(msg)
       if (!requests[msg.senderId].firstMessage) {
@@ -146,8 +148,8 @@ router.get('/:userId', authMiddleware, async (req, res) => {
         declined: false
       },
       include: {
-        sender: { select: { id: true, name: true } },
-        receiver: { select: { id: true, name: true } }
+        sender: { select: { id: true, name: true, avatar: true } },
+receiver: { select: { id: true, name: true, avatar: true } }
       },
       orderBy: { createdAt: 'asc' }
     })

@@ -139,9 +139,13 @@ export default function CourseSessions() {
                   className="flex items-center gap-2 mb-3 cursor-pointer group"
                   onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
                 >
-                  <div className={`w-6 h-6 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs`}>
-                    {getInitials(session.host?.name)}
-                  </div>
+                  <div className={`w-6 h-6 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden`}>
+  {session.host?.avatar ? (
+    <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(session.host?.name)
+  )}
+</div>
                   <span className="text-sm text-ncat-blue font-semibold group-hover:underline">{session.host?.name}</span>
                 </div>
                 {session.description && (
@@ -170,9 +174,13 @@ export default function CourseSessions() {
               className="flex items-center gap-3 mb-4 cursor-pointer group"
               onClick={() => { setSelectedSession(null); navigate(`/profile/${selectedSession.host?.id}`) }}
             >
-              <div className={`w-10 h-10 ${getColor(selectedSession.host?.name)} rounded-full flex items-center justify-center text-white font-bold`}>
-                {getInitials(selectedSession.host?.name)}
-              </div>
+              <div className={`w-10 h-10 ${getColor(selectedSession.host?.name)} rounded-full flex items-center justify-center text-white font-bold overflow-hidden`}>
+  {selectedSession.host?.avatar ? (
+    <img src={selectedSession.host.avatar} alt={selectedSession.host.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(selectedSession.host?.name)
+  )}
+</div>
               <div>
                 <p className="text-xs text-gray-400">Hosted by</p>
                 <p className="text-ncat-blue font-semibold group-hover:underline">{selectedSession.host?.name}</p>

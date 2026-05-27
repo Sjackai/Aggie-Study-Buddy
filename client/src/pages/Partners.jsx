@@ -91,14 +91,19 @@ export default function Partners() {
       className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer"
     >
       <div className="flex items-center gap-4 mb-3">
-        <div className={`w-14 h-14 ${getColor(partner.name)} rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 relative`}>
-          {getInitials(partner.name)}
-          {partner.isConnected && (
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-              <span className="text-white text-xs">✓</span>
-            </div>
-          )}
-        </div>
+        <div className={`w-14 h-14 ${getColor(partner.name)} rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 relative overflow-hidden`}
+  style={{ padding: partner.avatar ? '0' : undefined }}>
+  {partner.avatar ? (
+    <img src={partner.avatar} alt={partner.name} className="w-full h-full object-cover rounded-full" />
+  ) : (
+    getInitials(partner.name)
+  )}
+  {partner.isConnected && (
+    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+      <span className="text-white text-xs">✓</span>
+    </div>
+  )}
+</div>
         <div>
           <h3 className="font-bold text-gray-800">{partner.name}</h3>
           <p className="text-sm text-gray-500">{partner.major || 'Undeclared'} · {partner.year || 'N/A'}</p>
@@ -246,9 +251,13 @@ export default function Partners() {
                 ✕
               </button>
               <div className="flex items-center gap-4">
-                <div className={`w-16 h-16 ${getColor(selectedPartner.name)} rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-ncat-gold`}>
-                  {getInitials(selectedPartner.name)}
-                </div>
+                <div className={`w-16 h-16 ${getColor(selectedPartner.name)} rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-ncat-gold overflow-hidden`}>
+  {selectedPartner.avatar ? (
+    <img src={selectedPartner.avatar} alt={selectedPartner.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(selectedPartner.name)
+  )}
+</div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">{selectedPartner.name}</h2>
                   <p className="text-blue-200">{selectedPartner.major || 'Undeclared'} · {selectedPartner.year || 'N/A'}</p>

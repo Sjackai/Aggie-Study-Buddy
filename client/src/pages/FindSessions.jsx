@@ -219,9 +219,13 @@ const handleRequestRejoin = async (sessionId) => {
                         className="flex flex-col items-center gap-1 flex-shrink-0"
                         onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
                       >
-                        <div className={`w-16 h-16 ${getColor(session.host?.name)} rounded-2xl flex items-center justify-center text-white font-bold text-xl hover:opacity-80 transition`}>
-                          {getInitials(session.host?.name)}
-                        </div>
+                        <div className={`w-16 h-16 ${getColor(session.host?.name)} rounded-2xl flex items-center justify-center text-white font-bold text-xl hover:opacity-80 transition overflow-hidden`}>
+  {session.host?.avatar ? (
+    <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(session.host?.name)
+  )}
+</div>
                         <span className="text-xs text-ncat-blue font-semibold text-center hover:underline max-w-16 truncate">
                           {session.host?.name?.split(' ')[0]}
                         </span>
@@ -315,9 +319,13 @@ const handleRequestRejoin = async (sessionId) => {
               className="flex items-center gap-3 mb-4 cursor-pointer group"
               onClick={() => { setSelectedSession(null); navigate(`/profile/${selectedSession.host?.id}`) }}
             >
-              <div className={`w-12 h-12 ${getColor(selectedSession.host?.name)} rounded-xl flex items-center justify-center text-white font-bold`}>
-                {getInitials(selectedSession.host?.name)}
-              </div>
+              <div className={`w-16 h-16 ${getColor(session.host?.name)} rounded-2xl flex items-center justify-center text-white font-bold text-xl hover:opacity-80 transition overflow-hidden`}>
+  {session.host?.avatar ? (
+    <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(session.host?.name)
+  )}
+</div>
               <div>
                 <p className="text-xs text-gray-400">Hosted by</p>
                 <p className="text-ncat-blue font-semibold group-hover:underline">{selectedSession.host?.name}</p>

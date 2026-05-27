@@ -497,9 +497,13 @@ export default function Messages() {
                   <button key={thread.userId} onClick={() => openThread(thread)}
                     className={`w-full text-left p-4 border-b border-gray-50 hover:bg-gray-50 transition ${selectedThread?.userId === thread.userId ? 'bg-blue-50 border-l-4 border-l-ncat-blue' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 ${getColor(thread.name)} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
-                        {getInitials(thread.name)}
-                      </div>
+                      <div className={`w-12 h-12 ${getColor(thread.name)} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden`}>
+  {thread.avatar ? (
+    <img src={thread.avatar} alt={thread.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(thread.name)
+  )}
+</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center mb-1">
                           <p className="font-semibold text-sm text-gray-800 truncate">{thread.name}</p>
@@ -528,9 +532,13 @@ export default function Messages() {
                   <button key={request.userId} onClick={() => openRequest(request)}
                     className={`w-full text-left p-4 border-b border-gray-50 hover:bg-gray-50 transition ${selectedRequest?.userId === request.userId ? 'bg-blue-50 border-l-4 border-l-ncat-blue' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 ${getColor(request.name)} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}>
-                        {getInitials(request.name)}
-                      </div>
+                      <div className={`w-12 h-12 ${getColor(request.name)} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden`}>
+  {request.avatar ? (
+    <img src={request.avatar} alt={request.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(request.name)
+  )}
+</div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-gray-800 truncate">{request.name}</p>
                         <p className="text-xs text-gray-400 truncate">{request.firstMessage?.text}</p>
@@ -637,10 +645,14 @@ export default function Messages() {
             <div className="flex-1 flex flex-col overflow-hidden">
               <button onClick={() => setShowChat(false)} className="md:hidden bg-white px-4 py-2 text-ncat-blue font-semibold text-sm border-b border-gray-100 text-left">← Back</button>
               <div className="bg-white px-6 py-4 border-b border-gray-100 flex items-center gap-3 flex-shrink-0">
-                <div className={`w-10 h-10 ${getColor(selectedThread.name)} rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer`}
-                  onClick={() => navigate(`/profile/${selectedThread.userId}`)}>
-                  {getInitials(selectedThread.name)}
-                </div>
+                <div className={`w-10 h-10 ${getColor(selectedThread.name)} rounded-full flex items-center justify-center text-white font-bold text-sm cursor-pointer overflow-hidden`}
+  onClick={() => navigate(`/profile/${selectedThread.userId}`)}>
+  {selectedThread.avatar ? (
+    <img src={selectedThread.avatar} alt={selectedThread.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(selectedThread.name)
+  )}
+</div>
                 <div className="flex-1">
                   <p className="font-bold text-gray-800 cursor-pointer hover:text-ncat-blue" onClick={() => navigate(`/profile/${selectedThread.userId}`)}>
                     {selectedThread.name}
@@ -655,9 +667,13 @@ export default function Messages() {
                   messages.map(msg => (
                     <div key={msg.id} className={`flex ${msg.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
                       {msg.senderId !== currentUser?.id && (
-                        <div className={`w-8 h-8 ${getColor(msg.sender?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs mr-2 flex-shrink-0 self-end`}>
-                          {getInitials(msg.sender?.name)}
-                        </div>
+                        <div className={`w-8 h-8 ${getColor(msg.sender?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs mr-2 flex-shrink-0 self-end overflow-hidden`}>
+  {msg.sender?.avatar ? (
+    <img src={msg.sender.avatar} alt={msg.sender.name} className="w-full h-full object-cover" />
+  ) : (
+    getInitials(msg.sender?.name)
+  )}
+</div>
                       )}
                       <div className={`max-w-xs md:max-w-md px-4 py-3 rounded-2xl ${msg.senderId === currentUser?.id ? 'bg-ncat-blue text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
                         <p className="text-sm">{msg.text}</p>
