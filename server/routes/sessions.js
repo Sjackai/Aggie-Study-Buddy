@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     const sessions = await prisma.session.findMany({
       where: course ? { courseCode: course } : {},
       include: {
-        host: { select: { id: true, name: true } }, 
+        host: { select: { id: true, name: true, avatar: true } },
         members: {
           include: {
             user: { select: { id: true, name: true } }
@@ -88,7 +88,7 @@ router.post('/:id/join', authMiddleware, async (req, res) => {
       include: {
         members: true,
         groupChat: true,
-        host: { select: { id: true, name: true } }
+       host: { select: { id: true, name: true, avatar: true } },
       }
     })
 
@@ -233,7 +233,7 @@ router.post('/:id/request-rejoin', authMiddleware, async (req, res) => {
   try {
     const session = await prisma.session.findUnique({
       where: { id: req.params.id },
-      include: { groupChat: true, host: { select: { id: true, name: true } } }
+      include: { groupChat: true, host: { select: { id: true, name: true, avatar: true } } }
     })
 
     if (!session) return res.status(404).json({ error: 'Session not found' })
