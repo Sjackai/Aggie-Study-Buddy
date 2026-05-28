@@ -14,7 +14,13 @@ const formatTime = (time) => {
   return `${hour}:${minutes} ${ampm}`
 }
 
-const getInitials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'
+const getInitials = (name) => {
+  if (!name) return '?'
+  const parts = name.trim().split(' ')
+  if (parts.length === 1) return parts[0][0].toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
 const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500']
 const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
 
@@ -22,11 +28,14 @@ export default function FindSessions() {
   const [cooldownInfo, setCooldownInfo] = useState(null)
   const navigate = useNavigate()
   const [sessions, setSessions] = useState([])
+  const [recommended, setRecommended] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const [search, setSearch] = useState('')
   const [activeChip, setActiveChip] = useState('All')
   const [selectedSession, setSelectedSession] = useState(null)
+  const [collapsed, setCollapsed] = useState({}) // tracks which sections are collapsed
+  const [recommendedCollapsed, setRecommendedCollapsed] = useState(false)
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
@@ -37,6 +46,7 @@ export default function FindSessions() {
     const token = localStorage.getItem('token')
     if (!token) { navigate('/login'); return }
     fetchSessions(token)
+    fetchRecommended(token)
   }, [])
 
   const fetchSessions = async (token) => {
@@ -56,36 +66,53 @@ export default function FindSessions() {
     setLoading(false)
   }
 
-  const handleJoin = async (sessionId) => {
-  const token = localStorage.getItem('token')
-  try {
-    await axios.post(`${API_URL}/api/sessions/${sessionId}/join`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    showToast('Joined! You\'ve been added to the group chat 💬')
-    setSelectedSession(null)
-    fetchSessions(token)
-  } catch (err) {
-    const data = err.response?.data
-    if (data?.cooldown) {
-      setCooldownInfo({ sessionId, minutesLeft: data.minutesLeft, canRequest: data.canRequest })
-    } else {
-      showToast(data?.error || 'Failed to join session', 'error')
+  const fetchRecommended = async (token) => {
+    try {
+      const res = await axios.get(`${API_URL}/api/sessions/recommended`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setRecommended(res.data)
+    } catch (err) {
+      console.error(err)
     }
   }
-}
-const handleRequestRejoin = async (sessionId) => {
-  const token = localStorage.getItem('token')
-  try {
-    await axios.post(`${API_URL}/api/sessions/${sessionId}/request-rejoin`, {}, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    showToast('Rejoin request sent to host! 🙏')
-    setCooldownInfo(prev => ({ ...prev, canRequest: false }))
-  } catch (err) {
-    showToast(err.response?.data?.error || 'Failed to send request', 'error')
+
+  const handleJoin = async (sessionId) => {
+    const token = localStorage.getItem('token')
+    try {
+      await axios.post(`${API_URL}/api/sessions/${sessionId}/join`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      showToast('Joined! You\'ve been added to the group chat 💬')
+      setSelectedSession(null)
+      fetchSessions(token)
+    } catch (err) {
+      const data = err.response?.data
+      if (data?.cooldown) {
+        setCooldownInfo({ sessionId, minutesLeft: data.minutesLeft, canRequest: data.canRequest })
+      } else {
+        showToast(data?.error || 'Failed to join session', 'error')
+      }
+    }
   }
-}
+
+  const handleRequestRejoin = async (sessionId) => {
+    const token = localStorage.getItem('token')
+    try {
+      await axios.post(`${API_URL}/api/sessions/${sessionId}/request-rejoin`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      showToast('Rejoin request sent to host! 🙏')
+      setCooldownInfo(prev => ({ ...prev, canRequest: false }))
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to send request', 'error')
+    }
+  }
+
+  const toggleSection = (courseCode) => {
+    setCollapsed(prev => ({ ...prev, [courseCode]: !prev[courseCode] }))
+  }
+
   const courseCodes = ['All', ...new Set(sessions.map(s => s.courseCode))]
 
   const filtered = sessions.filter(s => {
@@ -104,6 +131,71 @@ const handleRequestRejoin = async (sessionId) => {
     return acc
   }, {})
 
+  const SessionCard = ({ session }) => (
+    <div
+      className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer relative overflow-hidden"
+      onClick={() => setSelectedSession(session)}
+    >
+      <div className="flex justify-between items-start mb-3">
+        <span className="font-bold text-ncat-blue text-lg">{session.courseCode}</span>
+        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${session.status === 'full' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+          {session.status}
+        </span>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
+          <p className="text-gray-500 text-sm mb-2">📍 {session.location}</p>
+          {session.description && (
+            <p className="text-gray-600 text-xs bg-gray-50 rounded-lg p-2 mb-2 line-clamp-2">{session.description}</p>
+          )}
+        </div>
+
+        <div
+          className="flex flex-col items-center gap-1 flex-shrink-0"
+          onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+        >
+          <div className={`w-16 h-16 ${getColor(session.host?.name)} rounded-2xl flex items-center justify-center text-white font-bold text-xl hover:opacity-80 transition overflow-hidden`}
+            style={{ padding: session.host?.avatar ? '0' : undefined }}>
+            {session.host?.avatar ? (
+              <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
+            ) : (
+              getInitials(session.host?.name)
+            )}
+          </div>
+          <span className="text-xs text-ncat-blue font-semibold text-center hover:underline max-w-16 truncate">
+            {session.host?.name?.split(' ')[0]}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+        <div className="flex items-center">
+          {session.members?.slice(0, 4).map((member, i) => (
+            <div
+              key={member.userId || i}
+              className={`w-7 h-7 ${getColor(member.user?.name || 'User')} rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-xs`}
+              style={{ marginLeft: i > 0 ? '-8px' : '0' }}
+              title={member.user?.name}
+            >
+              {getInitials(member.user?.name || 'U')}
+            </div>
+          ))}
+          {session.members?.length > 4 && (
+            <div className="w-7 h-7 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center text-gray-600 font-bold text-xs" style={{ marginLeft: '-8px' }}>
+              +{session.members.length - 4}
+            </div>
+          )}
+          {session.members?.length === 0 && (
+            <span className="text-xs text-gray-400">No members yet</span>
+          )}
+        </div>
+        <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
+      </div>
+    </div>
+  )
+
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <p className="text-ncat-blue font-semibold text-lg">Loading...</p>
@@ -115,17 +207,11 @@ const handleRequestRejoin = async (sessionId) => {
 
       {/* Navbar */}
       <nav className="bg-ncat-blue px-8 py-4 flex justify-between items-center">
-        <div 
-  className="flex items-center gap-3 cursor-pointer"
-  onClick={() => navigate('/dashboard')}
->
-  <Logo size={36} />
-  <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
-</div>
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="text-white hover:text-ncat-gold transition font-medium"
-        >
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <Logo size={36} />
+          <span className="text-white font-bold text-lg">Aggie StudyBuddy</span>
+        </div>
+        <button onClick={() => navigate('/dashboard')} className="text-white hover:text-ncat-gold transition font-medium">
           ← Back
         </button>
       </nav>
@@ -167,7 +253,77 @@ const handleRequestRejoin = async (sessionId) => {
           ))}
         </div>
 
-        {/* Results */}
+        {/* Recommended Section */}
+        {recommended.length > 0 && (
+          <div className="mb-8">
+            {/* Section header with collapse button */}
+            <button
+              className="flex items-center gap-3 mb-4 w-full text-left hover:opacity-80 transition"
+              onClick={() => setRecommendedCollapsed(!recommendedCollapsed)}
+            >
+              <h2 className="text-lg font-bold text-ncat-blue">🎯 Recommended for You</h2>
+              <span className="bg-ncat-gold text-ncat-blue text-xs font-bold px-2 py-1 rounded-full">
+                {recommended.length}
+              </span>
+              <span className="ml-auto text-ncat-blue text-lg">
+                {recommendedCollapsed ? '▾' : '▴'}
+              </span>
+            </button>
+
+            {!recommendedCollapsed && (
+              <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+                {recommended.map(session => (
+                  <div
+                    key={session.id}
+                    className="flex-shrink-0 w-64 bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition cursor-pointer"
+                    onClick={() => setSelectedSession(session)}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="font-bold text-ncat-blue">{session.courseCode}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-600">open</span>
+                    </div>
+
+                    <div
+                      className="flex items-center gap-2 mb-3 cursor-pointer group"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+                    >
+                      <div className={`w-7 h-7 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden`}>
+                        {session.host?.avatar ? (
+                          <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
+                        ) : getInitials(session.host?.name)}
+                      </div>
+                      <span className="text-xs text-ncat-blue font-semibold group-hover:underline truncate">
+                        {session.host?.name?.split(' ')[0]}
+                      </span>
+                    </div>
+
+                    <p className="text-gray-500 text-xs mb-1">📅 {session.date} at {formatTime(session.time)}</p>
+                    <p className="text-gray-500 text-xs mb-3">📍 {session.location}</p>
+
+                    {session.description && (
+                      <p className="text-gray-600 text-xs bg-gray-50 rounded-lg p-2 mb-3 line-clamp-2">{session.description}</p>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
+                      {session.score >= 10 ? (
+                        <span className="text-xs bg-ncat-gold bg-opacity-20 text-ncat-blue font-bold px-2 py-0.5 rounded-full border border-ncat-gold border-opacity-30">
+                          📚 Your Course
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-blue-50 text-ncat-blue font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                          🎓 Same Major
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* All Sessions grouped by course */}
         {Object.keys(grouped).length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <p className="text-4xl mb-3">📚</p>
@@ -176,135 +332,80 @@ const handleRequestRejoin = async (sessionId) => {
         ) : (
           Object.entries(grouped).map(([courseCode, courseSessions]) => (
             <div key={courseCode} className="mb-8">
+              {/* Section header with collapse toggle */}
               <button
                 className="flex items-center gap-3 mb-4 w-full text-left hover:opacity-80 transition"
-                onClick={() => navigate(`/sessions/${encodeURIComponent(courseCode)}`)}
+                onClick={() => toggleSection(courseCode)}
               >
                 <h2 className="text-lg font-bold text-ncat-blue">{courseCode}</h2>
                 <span className="text-sm text-gray-400">{courseSessions[0].courseName}</span>
                 <span className="bg-ncat-blue text-white text-xs font-bold px-2 py-1 rounded-full">
                   {courseSessions.length} session{courseSessions.length > 1 ? 's' : ''}
                 </span>
-                <span className="text-ncat-blue text-sm ml-auto">View all →</span>
+                {!collapsed[courseCode] && (
+                  <span
+                    className="text-ncat-blue text-sm ml-auto mr-2"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/sessions/${encodeURIComponent(courseCode)}`) }}
+                  >
+                    View all →
+                  </span>
+                )}
+                <span className="text-ncat-blue text-lg">
+                  {collapsed[courseCode] ? '▾' : '▴'}
+                </span>
               </button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {courseSessions.slice(0, 2).map(session => (
-                  <div
-                    key={session.id}
-                    className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition cursor-pointer relative overflow-hidden"
-                    onClick={() => setSelectedSession(session)}
-                  >
-                    {/* Top row - course code and status */}
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="font-bold text-ncat-blue text-lg">{session.courseCode}</span>
-                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${session.status === 'full' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                        {session.status}
-                      </span>
-                    </div>
-
-                    {/* Main content with host avatar on right */}
-                    <div className="flex gap-3">
-                      {/* Left side - session details */}
-                      <div className="flex-1">
-                        <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
-                        <p className="text-gray-500 text-sm mb-2">📍 {session.location}</p>
-                        {session.description && (
-                          <p className="text-gray-600 text-xs bg-gray-50 rounded-lg p-2 mb-2 line-clamp-2">{session.description}</p>
-                        )}
-                      </div>
-
-                      {/* Right side - host avatar */}
-                      <div
-                        className="flex flex-col items-center gap-1 flex-shrink-0"
-                        onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
-                      >
-                        <div className={`w-16 h-16 ${getColor(session.host?.name)} rounded-2xl flex items-center justify-center text-white font-bold text-xl hover:opacity-80 transition overflow-hidden`}>
-  {session.host?.avatar ? (
-    <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
-  ) : (
-    getInitials(session.host?.name)
-  )}
-</div>
-                        <span className="text-xs text-ncat-blue font-semibold text-center hover:underline max-w-16 truncate">
-                          {session.host?.name?.split(' ')[0]}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Bottom row - member lobby + spots */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                      {/* Member lobby avatars */}
-                      <div className="flex items-center">
-                        {session.members?.slice(0, 4).map((member, i) => (
-                          <div
-                            key={member.userId || i}
-                            className={`w-7 h-7 ${getColor(member.user?.name || 'User')} rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-xs`}
-                            style={{ marginLeft: i > 0 ? '-8px' : '0' }}
-                            title={member.user?.name}
-                          >
-                            {getInitials(member.user?.name || 'U')}
-                          </div>
-                        ))}
-                        {session.members?.length > 4 && (
-                          <div
-                            className="w-7 h-7 bg-gray-300 rounded-full border-2 border-white flex items-center justify-center text-gray-600 font-bold text-xs"
-                            style={{ marginLeft: '-8px' }}
-                          >
-                            +{session.members.length - 4}
-                          </div>
-                        )}
-                        {session.members?.length === 0 && (
-                          <span className="text-xs text-gray-400">No members yet</span>
-                        )}
-                      </div>
-                      <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {!collapsed[courseCode] && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {courseSessions.slice(0, 2).map(session => (
+                    <SessionCard key={session.id} session={session} />
+                  ))}
+                </div>
+              )}
             </div>
           ))
         )}
       </div>
-{/* Cooldown Modal */}
-{cooldownInfo && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-    <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
-      <div className="text-center mb-6">
-        <p className="text-4xl mb-3">⏳</p>
-        <h2 className="text-xl font-bold text-gray-800 mb-2">Cooldown Active</h2>
-        <p className="text-gray-500 text-sm leading-relaxed">
-          You must wait <span className="font-semibold text-ncat-blue">{cooldownInfo.minutesLeft} more minute{cooldownInfo.minutesLeft > 1 ? 's' : ''}</span> before rejoining.
-        </p>
-        {cooldownInfo.canRequest && (
-          <p className="text-gray-400 text-xs mt-2">Or ask the host to let you back in early.</p>
-        )}
-      </div>
-      <div className="flex flex-col gap-3">
-        {cooldownInfo.canRequest && (
-          <button
-            onClick={() => handleRequestRejoin(cooldownInfo.sessionId)}
-            className="w-full bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition"
-          >
-            🙏 Request Host to Let Me In
-          </button>
-        )}
-        {!cooldownInfo.canRequest && (
-          <div className="w-full bg-gray-100 text-gray-400 font-bold py-3 rounded-xl text-center text-sm">
-            Request already sent — waiting for host
+
+      {/* Cooldown Modal */}
+      {cooldownInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <div className="text-center mb-6">
+              <p className="text-4xl mb-3">⏳</p>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Cooldown Active</h2>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                You must wait <span className="font-semibold text-ncat-blue">{cooldownInfo.minutesLeft} more minute{cooldownInfo.minutesLeft > 1 ? 's' : ''}</span> before rejoining.
+              </p>
+              {cooldownInfo.canRequest && (
+                <p className="text-gray-400 text-xs mt-2">Or ask the host to let you back in early.</p>
+              )}
+            </div>
+            <div className="flex flex-col gap-3">
+              {cooldownInfo.canRequest && (
+                <button
+                  onClick={() => handleRequestRejoin(cooldownInfo.sessionId)}
+                  className="w-full bg-ncat-gold text-ncat-blue font-bold py-3 rounded-xl hover:opacity-90 transition"
+                >
+                  🙏 Request Host to Let Me In
+                </button>
+              )}
+              {!cooldownInfo.canRequest && (
+                <div className="w-full bg-gray-100 text-gray-400 font-bold py-3 rounded-xl text-center text-sm">
+                  Request already sent — waiting for host
+                </div>
+              )}
+              <button
+                onClick={() => setCooldownInfo(null)}
+                className="w-full border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition"
+              >
+                OK
+              </button>
+            </div>
           </div>
-        )}
-        <button
-          onClick={() => setCooldownInfo(null)}
-          className="w-full border border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition"
-        >
-          OK
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
+
       {/* Session Detail Modal */}
       {selectedSession && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
@@ -314,18 +415,15 @@ const handleRequestRejoin = async (sessionId) => {
               <button onClick={() => setSelectedSession(null)} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
             </div>
 
-            {/* Host in modal */}
             <div
               className="flex items-center gap-3 mb-4 cursor-pointer group"
               onClick={() => { setSelectedSession(null); navigate(`/profile/${selectedSession.host?.id}`) }}
             >
-              <div className={`w-16 h-16 ${getColor(session.host?.name)} rounded-2xl flex items-center justify-center text-white font-bold text-xl hover:opacity-80 transition overflow-hidden`}>
-  {session.host?.avatar ? (
-    <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover" />
-  ) : (
-    getInitials(session.host?.name)
-  )}
-</div>
+              <div className={`w-12 h-12 ${getColor(selectedSession.host?.name)} rounded-xl flex items-center justify-center text-white font-bold overflow-hidden`}>
+                {selectedSession.host?.avatar ? (
+                  <img src={selectedSession.host.avatar} alt={selectedSession.host.name} className="w-full h-full object-cover" />
+                ) : getInitials(selectedSession.host?.name)}
+              </div>
               <div>
                 <p className="text-xs text-gray-400">Hosted by</p>
                 <p className="text-ncat-blue font-semibold group-hover:underline">{selectedSession.host?.name}</p>
@@ -336,7 +434,6 @@ const handleRequestRejoin = async (sessionId) => {
             <p className="text-gray-500 text-sm mb-1">📍 {selectedSession.location}</p>
             <p className="text-gray-500 text-sm mb-4">👥 {selectedSession.members?.length}/{selectedSession.maxParticipants} spots filled</p>
 
-            {/* Member lobby in modal */}
             {selectedSession.members?.length > 0 && (
               <div className="mb-4">
                 <p className="text-xs text-gray-400 mb-2">Members joined</p>
@@ -359,6 +456,15 @@ const handleRequestRejoin = async (sessionId) => {
                 <p className="text-sm text-gray-600">{selectedSession.description}</p>
               </div>
             )}
+
+            {selectedSession.tags?.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-4">
+                {selectedSession.tags.map(tag => (
+                  <span key={tag} className="text-xs bg-blue-50 text-ncat-blue font-semibold px-2 py-1 rounded-full">{tag}</span>
+                ))}
+              </div>
+            )}
+
             <button
               onClick={() => handleJoin(selectedSession.id)}
               disabled={selectedSession.status === 'full'}

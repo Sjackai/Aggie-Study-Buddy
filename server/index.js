@@ -18,6 +18,7 @@ app.use('/api/groupchats', require('./routes/groupchats'))
 app.use('/api/notifications', require('./routes/notifications'))
 app.use('/api/quotes', require('./routes/quotes'))
 app.use('/api/upload', require('./routes/upload'))
+app.use('/api/daily', require('./routes/daily'))
 
 app.get('/', (req, res) => {
   res.json({ message: 'Aggie StudyBuddy API is running!' })

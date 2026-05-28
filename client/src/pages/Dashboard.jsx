@@ -8,7 +8,7 @@ import axios from 'axios'
 import API_URL from '../config'
 import hashtags from '../data/hashtags'
 import QuoteOfDay from '../components/QuoteOfDay'
-
+import DailyFacts from '../components/DailyFacts'
 const formatTime = (time) => {
   if (!time) return ''
   const [hours, minutes] = time.split(':')
@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState(null)
   const [showNotifications, setShowNotifications] = useState(false)
   const [leaveConfirm, setLeaveConfirm] = useState(null)
+  const [recommended, setRecommended] = useState([])
   const [notifications, setNotifications] = useState({
     total: 0,
     connectionRequests: [],
@@ -75,7 +76,7 @@ export default function Dashboard() {
     fetchMySessions(token, JSON.parse(stored).id)
     checkKudosEligible(token)
     fetchNotifications(token)
-
+    fetchRecommended(token)
     const interval = setInterval(() => {
       fetchNotifications(token)
     }, 10000)
@@ -169,6 +170,16 @@ export default function Dashboard() {
       console.error(err)
     }
   }
+  const fetchRecommended = async (token) => {
+  try {
+    const res = await axios.get(`${API_URL}/api/sessions/recommended`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    setRecommended(res.data)
+  } catch (err) {
+    console.error(err)
+  }
+}
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -413,12 +424,13 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           {[
             { emoji: '➕', label: 'Create Session', color: 'bg-green-50 border-green-200', onClick: () => setShowCreate(true) },
             { emoji: '🔍', label: 'Find Sessions', color: 'bg-blue-50 border-blue-200', onClick: () => navigate('/find-sessions') },
             { emoji: '🤝', label: 'Find Partners', color: 'bg-yellow-50 border-yellow-200', onClick: () => navigate('/partners') },
-            { emoji: '💬', label: 'Messages', color: 'bg-red-50 border-red-200', onClick: () => navigate('/messages'), badge: totalMessageNotifs },
+           { emoji: '💬', label: 'Messages', color: 'bg-red-50 border-red-200', onClick: () => navigate('/messages'), badge: totalMessageNotifs },
+{ emoji: '🗺️', label: 'Campus Map', color: 'bg-purple-50 border-purple-200', onClick: () => navigate('/map') },
           ].map((action, i) => (
             <button key={i} onClick={action.onClick} className={`${action.color} border rounded-2xl p-4 text-center hover:shadow-md transition relative`}>
               <div className="text-3xl mb-2">{action.emoji}</div>
@@ -431,7 +443,85 @@ export default function Dashboard() {
             </button>
           ))}
         </div>
+        {/* Recommended Sessions */}
+{recommended.length > 0 && (
+  <div className="mb-8">
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-xl font-bold text-ncat-blue">Recommended for You 🎯</h2>
+      <button
+        onClick={() => navigate('/find-sessions')}
+        className="text-ncat-blue text-sm font-semibold hover:underline"
+      >
+        See all →
+      </button>
+    </div>
+    <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+      {recommended.map(session => (
+        <div
+          key={session.id}
+          className="flex-shrink-0 w-64 bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition cursor-pointer"
+          onClick={() => navigate('/find-sessions')}
+        >
+          {/* Course + status */}
+          <div className="flex justify-between items-start mb-3">
+            <span className="font-bold text-ncat-blue">{session.courseCode}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-600">
+              open
+            </span>
+          </div>
 
+          {/* Host */}
+          <div
+            className="flex items-center gap-2 mb-3 cursor-pointer group"
+            onClick={(e) => { e.stopPropagation(); navigate(`/profile/${session.host?.id}`) }}
+          >
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 overflow-hidden"
+              style={{ padding: '2px', background: session.host?.borderColor || '#FFB81C' }}
+            >
+              <div className={`w-full h-full rounded-full flex items-center justify-center ${colors[(session.host?.name?.charCodeAt(0) || 0) % colors.length]}`}>
+                {session.host?.avatar ? (
+                  <img src={session.host.avatar} alt={session.host.name} className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <span className="text-white font-bold text-xs">{getInitials(session.host?.name)}</span>
+                )}
+              </div>
+            </div>
+            <span className="text-xs text-ncat-blue font-semibold group-hover:underline truncate">
+              {session.host?.name?.split(' ')[0]}
+            </span>
+          </div>
+
+          {/* Date + location */}
+          <p className="text-gray-500 text-xs mb-1">📅 {session.date} at {formatTime(session.time)}</p>
+          <p className="text-gray-500 text-xs mb-3">📍 {session.location}</p>
+
+          {/* Description */}
+          {session.description && (
+            <p className="text-gray-600 text-xs bg-gray-50 rounded-lg p-2 mb-3 line-clamp-2">
+              {session.description}
+            </p>
+          )}
+
+          {/* Members + score badge */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
+            {session.score >= 10 && (
+              <span className="text-xs bg-ncat-gold bg-opacity-20 text-ncat-blue font-bold px-2 py-0.5 rounded-full border border-ncat-gold border-opacity-30">
+                📚 Your Course
+              </span>
+            )}
+            {session.score < 10 && session.score >= 3 && (
+              <span className="text-xs bg-blue-50 text-ncat-blue font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                🎓 Same Major
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
         {/* My Sessions */}
         <div>
           <h2 className="text-xl font-bold text-ncat-blue mb-4">📋 My Sessions</h2>
@@ -539,6 +629,13 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+       {/* Daily Facts */}
+<div className="mt-8">
+  <DailyFacts />
+</div>
+
+
         {/* Quote of the Day */}
         <div className="mt-8">
           <QuoteOfDay />

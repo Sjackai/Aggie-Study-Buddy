@@ -10,6 +10,8 @@ import Profile from './pages/Profile'
 import Messages from './pages/Messages'
 import PublicProfile from './pages/PublicProfile'
 import Onboarding from './pages/Onboarding'
+import CampusMap from './pages/CampusMap'
+
 
 
 function App() {
@@ -27,6 +29,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/partners" element={<Partners />} />
         <Route path="/find-sessions" element={<FindSessions />} />
+        <Route path="/map" element={<CampusMap />} />
       </Routes>
     </BrowserRouter>
   )

@@ -409,5 +409,49 @@ router.post('/:id/decline/:userId', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to decline rejoin' })
   }
 })
+// GET RECOMMENDED SESSIONS
+router.get('/recommended', authMiddleware, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: { preferences: true }
+    })
 
+    const today = new Date().toISOString().split('T')[0]
+    const userCourses = user.preferences?.courses || []
+
+    const sessions = await prisma.session.findMany({
+      where: {
+        date: { gte: today },
+        status: 'open',
+        hostId: { not: req.userId },
+        members: { none: { userId: req.userId } }
+      },
+      include: {
+        host: { select: { id: true, name: true, major: true, avatar: true, borderColor: true } },
+        members: { include: { user: { select: { id: true, name: true } } } }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    // Score each session by relevance
+    const scored = sessions.map(session => {
+      let score = 0
+      if (userCourses.includes(session.courseCode)) score += 10
+      if (session.host?.major === user.major) score += 3
+      if (session.members.length > 0) score += 1
+      return { ...session, score }
+    })
+
+    // Sort by score descending, take top 10
+    const recommended = scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+
+    res.json(recommended)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch recommendations' })
+  }
+})
 module.exports = router

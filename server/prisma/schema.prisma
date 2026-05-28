@@ -174,3 +174,18 @@ model Quote {
   wikiUrl     String
   createdAt   DateTime @default(now())
 }
+model HBCUFact {
+  id        String   @id @default(cuid())
+  fact      String
+  source    String?
+  createdAt DateTime @default(now())
+}
+
+model HistoryEvent {
+  id           String   @id @default(cuid())
+  date         String
+  event        String
+  year         Int
+  significance String?
+  createdAt    DateTime @default(now())
+}
