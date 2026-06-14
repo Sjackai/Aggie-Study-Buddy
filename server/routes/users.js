@@ -21,7 +21,8 @@ router.get('/search', authMiddleware, async (req, res) => {
         name: true,
         major: true,
         year: true,
-        isPrivate: true
+        isPrivate: true,
+        emailVerified: true
       },
       take: 10
     })
@@ -89,8 +90,8 @@ router.get('/profile/:userId', authMiddleware, async (req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.userId },
-     select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, banners: true, borderColor: true, vibeTemplate: true, vibeFill: true, isPrivate: true, createdAt: true }
+      where: { id: req.userId },select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, banners: true, borderColor: true, vibeTemplate: true, vibeFill: true, isPrivate: true, emailVerified: true, createdAt: true }
+     
     })
     res.json(user)
   } catch (err) {

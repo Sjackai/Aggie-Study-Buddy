@@ -71,6 +71,22 @@ const res = await axios.post(`${API_URL}/api/auth/login`, form)
               required
             />
           </div>
+          <div>
+            <label className="block text-sm font-semibold text-ncat-blue mb-1">Password</label>
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
+              required
+            />
+          </div>
+
+          <p className="text-right text-sm">
+            <Link to="/forgot-password" className="text-ncat-blue hover:underline">Forgot password?</Link>
+          </p>
 
           <button
             type="submit"

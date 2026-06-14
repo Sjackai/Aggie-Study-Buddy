@@ -11,6 +11,9 @@ import Messages from './pages/Messages'
 import PublicProfile from './pages/PublicProfile'
 import Onboarding from './pages/Onboarding'
 import CampusMap from './pages/CampusMap'
+import VerifyEmail from './pages/VerifyEmail'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 
 
@@ -30,6 +33,9 @@ function App() {
         <Route path="/partners" element={<Partners />} />
         <Route path="/find-sessions" element={<FindSessions />} />
         <Route path="/map" element={<CampusMap />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+<Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   )

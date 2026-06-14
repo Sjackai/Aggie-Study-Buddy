@@ -127,5 +127,120 @@ router.post('/groupchat/:id/read', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to mark as read' })
   }
 })
+// GET NOTIFICATION HISTORY (last 7 days, read/resolved)
+router.get('/history', authMiddleware, async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
+    // Resolved connection requests
+    const resolvedConnections = await prisma.connection.findMany({
+      where: {
+        toUserId: req.userId,
+        status: { in: ['accepted', 'declined'] },
+        updatedAt: { gte: sevenDaysAgo }
+      },
+      include: {
+        fromUser: { select: { id: true, name: true, major: true, avatar: true } }
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 10
+    })
+
+    // Read direct messages
+    const readMessages = await prisma.message.findMany({
+      where: {
+        receiverId: req.userId,
+        read: true,
+        isRequest: false,
+        createdAt: { gte: sevenDaysAgo }
+      },
+      distinct: ['senderId'],
+      include: {
+        sender: { select: { id: true, name: true, avatar: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    })
+
+    res.json({
+      resolvedConnections: resolvedConnections.map(c => ({
+        id: c.id,
+        name: c.fromUser.name,
+        major: c.fromUser.major,
+        avatar: c.fromUser.avatar,
+        status: c.status,
+        date: c.updatedAt
+      })),
+      readMessages: readMessages.map(m => ({
+        userId: m.senderId,
+        name: m.sender.name,
+        avatar: m.sender.avatar,
+        lastMessage: m.text,
+        date: m.createdAt
+      }))
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch notification history' })
+  }
+})
+// GET NOTIFICATION HISTORY (last 7 days, read/resolved)
+router.get('/history', authMiddleware, async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+    // Resolved connection requests
+    const resolvedConnections = await prisma.connection.findMany({
+      where: {
+        toUserId: req.userId,
+        status: { in: ['accepted', 'declined'] },
+        updatedAt: { gte: sevenDaysAgo }
+      },
+      include: {
+        fromUser: { select: { id: true, name: true, major: true, avatar: true } }
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 10
+    })
+
+    // Read direct messages
+    const readMessages = await prisma.message.findMany({
+      where: {
+        receiverId: req.userId,
+        read: true,
+        isRequest: false,
+        createdAt: { gte: sevenDaysAgo }
+      },
+      distinct: ['senderId'],
+      include: {
+        sender: { select: { id: true, name: true, avatar: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    })
+
+    res.json({
+      resolvedConnections: resolvedConnections.map(c => ({
+        id: c.id,
+        name: c.fromUser.name,
+        major: c.fromUser.major,
+        avatar: c.fromUser.avatar,
+        status: c.status,
+        date: c.updatedAt
+      })),
+      readMessages: readMessages.map(m => ({
+        userId: m.senderId,
+        name: m.sender.name,
+        avatar: m.sender.avatar,
+        lastMessage: m.text,
+        date: m.createdAt
+      }))
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch notification history' })
+  }
+})
 module.exports = router

@@ -34,6 +34,11 @@ model User {
   groupChatMembers  GroupChatMember[]
   groupChatMessages GroupChatMessage[]
   preferences       UserPreferences?
+
+  emailVerified     Boolean   @default(false)
+verificationToken String?
+resetToken        String?
+resetTokenExpiry  DateTime?
 }
 model Session {
   id              String   @id @default(cuid())
@@ -70,6 +75,7 @@ model Connection {
   id        String   @id @default(cuid())
   status    String   @default("pending")
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   fromUser   User   @relation("ConnectionFrom", fields: [fromUserId], references: [id])
   fromUserId String
