@@ -34,7 +34,9 @@ export default function QRScanner({ session, onSuccess, onClose }) {
           )
 
           setSuccess(true)
-          setTimeout(() => onSuccess(), 2000)
+setTimeout(() => {
+  onSuccess()
+}, 2500)
         } catch (err) {
           setError(err.response?.data?.error || 'Failed to check in')
         }

@@ -802,10 +802,10 @@ useEffect(() => {
   <QRScanner
     session={scanSession}
     onSuccess={() => {
-      setScanSession(null)
-      showToast('Checked in successfully! ✅')
-      fetchMySessions(localStorage.getItem('token'), user.id)
-    }}
+  showToast('Checked in successfully! ✅')
+  fetchMySessions(localStorage.getItem('token'), user.id)
+  setScanSession(null)
+}}
     onClose={() => setScanSession(null)}
   />
 )}
