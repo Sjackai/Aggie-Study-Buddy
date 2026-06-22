@@ -479,12 +479,12 @@ router.get('/:id/qr', authMiddleware, async (req, res) => {
     console.log('Minutes until start:', minutesUntilStart)
     console.log('Minutes after start:', minutesAfterStart)
 
-    if (minutesUntilStart > 30) {
-      return res.status(400).json({ error: 'Too early to show QR code. Available 30 minutes before start.' })
-    }
-    if (minutesAfterStart > 60) {
-      return res.status(400).json({ error: 'QR code window has expired.' })
-    }
+    if (minutesUntilStart > 120) {
+  return res.status(400).json({ error: 'Too early to show QR code. Available 2 hours before start.' })
+}
+if (minutesAfterStart > 180) {
+  return res.status(400).json({ error: 'QR code window has expired.' })
+}
 
     const token = generateQRToken(session.id)
     const qrData = JSON.stringify({ sessionId: session.id, token })
