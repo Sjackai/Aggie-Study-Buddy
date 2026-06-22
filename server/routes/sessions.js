@@ -8,6 +8,7 @@ const prisma = new PrismaClient()
 const COOLDOWN_MINUTES = 30
 
 // GET ALL SESSIONS
+
 router.get('/', async (req, res) => {
   try {
     const { course } = req.query
@@ -459,16 +460,24 @@ const { generateQRToken, verifyQRToken, WINDOW_SECONDS } = require('../utils/qrT
 
 // GET QR CODE FOR SESSION (host only)
 router.get('/:id/qr', authMiddleware, async (req, res) => {
+  console.log('QR route hit for session:', req.params.id)
   try {
     const session = await prisma.session.findUnique({ where: { id: req.params.id } })
     if (!session) return res.status(404).json({ error: 'Session not found' })
     if (session.hostId !== req.userId) return res.status(403).json({ error: 'Only the host can show the QR code' })
 
     // Check time window — 30 min before to 1 hour after start
-    const sessionDateTime = new Date(`${session.date}T${session.time}`)
+    const [hours, minutes] = session.time.split(':').map(Number)
+    const sessionDateTime = new Date(session.date)
+    sessionDateTime.setHours(hours, minutes, 0, 0)
     const now = new Date()
     const minutesUntilStart = (sessionDateTime - now) / 1000 / 60
     const minutesAfterStart = (now - sessionDateTime) / 1000 / 60
+    console.log('Session time:', session.time, 'Session date:', session.date)
+    console.log('Session datetime:', sessionDateTime)
+    console.log('Now:', now)
+    console.log('Minutes until start:', minutesUntilStart)
+    console.log('Minutes after start:', minutesAfterStart)
 
     if (minutesUntilStart > 30) {
       return res.status(400).json({ error: 'Too early to show QR code. Available 30 minutes before start.' })
@@ -481,7 +490,6 @@ router.get('/:id/qr', authMiddleware, async (req, res) => {
     const qrData = JSON.stringify({ sessionId: session.id, token })
     const qrImage = await QRCode.toDataURL(qrData)
 
-    // Mark host as attended automatically since they're showing the QR
     await prisma.session.update({
       where: { id: session.id },
       data: { hostAttended: true }
@@ -493,7 +501,6 @@ router.get('/:id/qr', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to generate QR code' })
   }
 })
-
 // CHECK IN VIA QR SCAN
 router.post('/:id/checkin', authMiddleware, async (req, res) => {
   try {
