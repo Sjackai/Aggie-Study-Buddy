@@ -32,8 +32,7 @@ router.get('/', async (req, res) => {
 // CREATE SESSION
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { courseCode, courseName, date, time, location, description, maxParticipants, tags } = req.body
-
+    const { courseCode, courseName, date, time, location, roomDetails, description, maxParticipants, tags } = req.body
     const session = await prisma.session.create({
       data: {
         courseCode,
@@ -41,6 +40,7 @@ router.post('/', authMiddleware, async (req, res) => {
         date,
         time,
         location,
+        roomDetails,
         description,
         maxParticipants: maxParticipants || 6,
         hostId: req.userId,
@@ -454,4 +454,103 @@ router.get('/recommended', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch recommendations' })
   }
 })
+const QRCode = require('qrcode')
+const { generateQRToken, verifyQRToken, WINDOW_SECONDS } = require('../utils/qrToken')
+
+// GET QR CODE FOR SESSION (host only)
+router.get('/:id/qr', authMiddleware, async (req, res) => {
+  try {
+    const session = await prisma.session.findUnique({ where: { id: req.params.id } })
+    if (!session) return res.status(404).json({ error: 'Session not found' })
+    if (session.hostId !== req.userId) return res.status(403).json({ error: 'Only the host can show the QR code' })
+
+    // Check time window — 30 min before to 1 hour after start
+    const sessionDateTime = new Date(`${session.date}T${session.time}`)
+    const now = new Date()
+    const minutesUntilStart = (sessionDateTime - now) / 1000 / 60
+    const minutesAfterStart = (now - sessionDateTime) / 1000 / 60
+
+    if (minutesUntilStart > 30) {
+      return res.status(400).json({ error: 'Too early to show QR code. Available 30 minutes before start.' })
+    }
+    if (minutesAfterStart > 60) {
+      return res.status(400).json({ error: 'QR code window has expired.' })
+    }
+
+    const token = generateQRToken(session.id)
+    const qrData = JSON.stringify({ sessionId: session.id, token })
+    const qrImage = await QRCode.toDataURL(qrData)
+
+    // Mark host as attended automatically since they're showing the QR
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { hostAttended: true }
+    })
+
+    res.json({ qrImage, expiresIn: WINDOW_SECONDS })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to generate QR code' })
+  }
+})
+
+// CHECK IN VIA QR SCAN
+router.post('/:id/checkin', authMiddleware, async (req, res) => {
+  try {
+    const { token } = req.body
+    const session = await prisma.session.findUnique({ where: { id: req.params.id } })
+    if (!session) return res.status(404).json({ error: 'Session not found' })
+
+    if (!verifyQRToken(session.id, token)) {
+      return res.status(400).json({ error: 'Invalid or expired QR code' })
+    }
+
+    const member = await prisma.sessionMember.findFirst({
+      where: { sessionId: session.id, userId: req.userId }
+    })
+    if (!member) return res.status(403).json({ error: 'You are not a member of this session' })
+
+    if (member.attended) {
+      return res.status(400).json({ error: 'You already checked in' })
+    }
+
+    await prisma.sessionMember.update({
+      where: { id: member.id },
+      data: { attended: true, checkedInAt: new Date() }
+    })
+
+    res.json({ success: true })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to check in' })
+  }
+})
+
+// GET CHECK-IN STATUS FOR A SESSION
+router.get('/:id/checkin-status', authMiddleware, async (req, res) => {
+  try {
+    const session = await prisma.session.findUnique({
+      where: { id: req.params.id },
+      include: {
+        members: { include: { user: { select: { id: true, name: true, avatar: true } } } }
+      }
+    })
+    if (!session) return res.status(404).json({ error: 'Session not found' })
+
+    res.json({
+      hostAttended: session.hostAttended,
+      members: session.members.map(m => ({
+        userId: m.userId,
+        name: m.user.name,
+        avatar: m.user.avatar,
+        attended: m.attended,
+        checkedInAt: m.checkedInAt
+      }))
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch check-in status' })
+  }
+})
+
 module.exports = router

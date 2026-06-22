@@ -450,7 +450,7 @@ export default function CampusMap() {
                           {isFull ? 'Full' : 'Open'}
                         </span>
                       </div>
-                      <p className="text-gray-500 text-xs mb-1">📅 {session.date} at {formatTime(session.time)}</p>
+                     <p className="text-gray-500 text-sm mb-2">📍 {session.location}{session.roomDetails && ` — ${session.roomDetails}`}</p>
                       <p className="text-gray-400 text-xs mb-2">👥 {session.members?.length}/{session.maxParticipants} members</p>
 
                       <div className="flex items-center gap-2 mb-3 cursor-pointer"

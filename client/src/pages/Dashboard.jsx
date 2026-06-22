@@ -9,6 +9,7 @@ import API_URL from '../config'
 import hashtags from '../data/hashtags'
 import QuoteOfDay from '../components/QuoteOfDay'
 import DailyFacts from '../components/DailyFacts'
+import QRScanner from '../components/QRScanner'
 const formatTime = (time) => {
   if (!time) return ''
   const [hours, minutes] = time.split(':')
@@ -23,6 +24,10 @@ const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500',
 const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
 
 export default function Dashboard() {
+  const [qrModal, setQrModal] = useState(null)
+const [qrImage, setQrImage] = useState(null)
+const [qrError, setQrError] = useState('')
+const [scanSession, setScanSession] = useState(null)
   const [showKudos, setShowKudos] = useState(false)
   const [kudosSession, setKudosSession] = useState(null)
   const [kudosPrompt, setKudosPrompt] = useState(null)
@@ -47,8 +52,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('upcoming')
   const [activeHashtagCategory, setActiveHashtagCategory] = useState('Session Type')
   const [newSession, setNewSession] = useState({
-    courseCode: '', courseName: '', date: '', time: '', location: '', description: '', maxParticipants: 6, tags: []
-  })
+  courseCode: '', courseName: '', date: '', time: '', location: '', roomDetails: '', description: '', maxParticipants: 6, tags: []
+})
   const notifRef = useRef(null)
 
   const showToast = (message, type = 'success') => {
@@ -200,6 +205,25 @@ axios.get(`${API_URL}/api/users/me`, {
     console.error(err)
   }
 }
+const fetchQR = async (sessionId) => {
+  const token = localStorage.getItem('token')
+  setQrError('')
+  try {
+    const res = await axios.get(`${API_URL}/api/sessions/${sessionId}/qr`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    setQrImage(res.data.qrImage)
+  } catch (err) {
+    setQrError(err.response?.data?.error || 'Failed to load QR code')
+  }
+}
+
+useEffect(() => {
+  if (!qrModal) return
+  fetchQR(qrModal.id)
+  const interval = setInterval(() => fetchQR(qrModal.id), 25000) // refresh before 30s expiry
+  return () => clearInterval(interval)
+}, [qrModal])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -687,7 +711,7 @@ axios.get(`${API_URL}/api/users/me`, {
                     </div>
                   </div>
                   <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
-                  <p className="text-gray-500 text-sm mb-2">📍 {session.location}</p>
+                  <p className="text-gray-500 text-sm mb-2">📍 {session.location}{session.roomDetails && ` — ${session.roomDetails}`}</p>
                   <div className="flex items-center gap-2 mb-3 cursor-pointer group" onClick={() => navigate(`/profile/${session.host?.id}`)}>
                     <div className={`w-6 h-6 ${getColor(session.host?.name)} rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden`}>
                       {session.host?.avatar ? (
@@ -709,16 +733,32 @@ axios.get(`${API_URL}/api/users/me`, {
                     </div>
                   )}
                   <div className="flex justify-between items-center pt-1">
-                    <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
-                    {activeTab === 'upcoming' && session.hostId !== user?.id && (
-                      <button
-                        onClick={() => setLeaveConfirm(session)}
-                        className="text-red-400 hover:text-red-600 text-xs font-semibold transition"
-                      >
-                        Leave
-                      </button>
-                    )}
-                  </div>
+  <span className="text-sm text-gray-400">👥 {session.members?.length}/{session.maxParticipants}</span>
+  {activeTab === 'upcoming' && session.hostId === user?.id && (
+    <button
+      onClick={() => setQrModal(session)}
+      className="bg-ncat-blue text-white text-xs font-bold px-3 py-1.5 rounded-xl hover:opacity-90 transition"
+    >
+      📱 Show QR
+    </button>
+  )}
+  {activeTab === 'upcoming' && session.hostId !== user?.id && (
+  <div className="flex items-center gap-2">
+    <button
+      onClick={() => setScanSession(session)}
+      className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl hover:opacity-90 transition"
+    >
+      📷 Check In
+    </button>
+    <button
+      onClick={() => setLeaveConfirm(session)}
+      className="text-red-400 hover:text-red-600 text-xs font-semibold transition"
+    >
+      Leave
+    </button>
+  </div>
+)}
+</div>
 
                   {activeTab === 'past' && (
                     <div className="relative group mt-3">
@@ -757,6 +797,56 @@ axios.get(`${API_URL}/api/users/me`, {
           <QuoteOfDay />
         </div>
       </div>
+{/* QR Scanner Modal */}
+{scanSession && (
+  <QRScanner
+    session={scanSession}
+    onSuccess={() => {
+      setScanSession(null)
+      showToast('Checked in successfully! ✅')
+      fetchMySessions(localStorage.getItem('token'), user.id)
+    }}
+    onClose={() => setScanSession(null)}
+  />
+)}
+      {/* QR Code Modal */}
+{qrModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 px-4">
+    <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-lg font-bold text-ncat-blue">{qrModal.courseCode} Check-In</h2>
+          <p className="text-xs text-gray-400">{qrModal.location}{qrModal.roomDetails && ` — ${qrModal.roomDetails}`}</p>
+        </div>
+        <button onClick={() => { setQrModal(null); setQrImage(null); setQrError('') }}
+          className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+      </div>
+
+      {qrError ? (
+        <div className="py-8">
+          <p className="text-4xl mb-3">⏰</p>
+          <p className="text-gray-600 font-semibold mb-2">{qrError}</p>
+          <p className="text-gray-400 text-xs">QR is available 30 minutes before your session starts</p>
+        </div>
+      ) : qrImage ? (
+        <>
+          <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+            <img src={qrImage} alt="QR Code" className="w-full max-w-xs mx-auto" />
+          </div>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <p className="text-xs text-green-600 font-semibold">QR refreshes every 30 seconds</p>
+          </div>
+          <p className="text-xs text-gray-400">Show this to your study group members to check in</p>
+        </>
+      ) : (
+        <div className="py-8">
+          <p className="text-gray-400 text-sm">Loading QR code...</p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
       {/* Leave Session Warning Modal */}
       {leaveConfirm && (

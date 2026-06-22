@@ -146,7 +146,7 @@ export default function FindSessions() {
       <div className="flex gap-3">
         <div className="flex-1">
           <p className="text-gray-500 text-sm mb-1">📅 {session.date} at {formatTime(session.time)}</p>
-          <p className="text-gray-500 text-sm mb-2">📍 {session.location}</p>
+         <p className="text-gray-500 text-sm mb-2">📍 {session.location}{session.roomDetails && ` — ${session.roomDetails}`}</p>
           {session.description && (
             <p className="text-gray-600 text-xs bg-gray-50 rounded-lg p-2 mb-2 line-clamp-2">{session.description}</p>
           )}
