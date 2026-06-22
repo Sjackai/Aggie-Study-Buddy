@@ -559,5 +559,12 @@ router.get('/:id/checkin-status', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch check-in status' })
   }
 })
-
+router.get('/debug-time', async (req, res) => {
+  const now = new Date()
+  res.json({
+    serverTime: now.toString(),
+    serverUTC: now.toISOString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  })
+})
 module.exports = router
