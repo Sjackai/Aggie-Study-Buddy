@@ -19,7 +19,15 @@ router.get('/', authMiddleware, async (req, res) => {
         groupChat: {
           include: {
             session: {
-              select: { id: true, courseCode: true, courseName: true, date: true, time: true, hostId: true }
+              select: { 
+  id: true, 
+  courseCode: true, 
+  courseName: true, 
+  date: true, 
+  time: true, 
+  hostId: true,
+  host: { select: { id: true, name: true, avatar: true } }
+}
             },
             members: {
               where: { leftAt: null },

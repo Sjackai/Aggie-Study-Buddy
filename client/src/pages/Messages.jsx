@@ -15,6 +15,8 @@ const formatTime = (dateStr) => {
 }
 
 export default function Messages() {
+  const [showAttendance, setShowAttendance] = useState(false)
+const [attendanceData, setAttendanceData] = useState(null)
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('direct')
   const [threads, setThreads] = useState([])
@@ -42,6 +44,17 @@ export default function Messages() {
   const currentUser = JSON.parse(localStorage.getItem('user'))
   const directPollRef = useRef(null)
   const groupPollRef = useRef(null)
+  const fetchAttendance = async (sessionId) => {
+  const token = localStorage.getItem('token')
+  try {
+    const res = await axios.get(`${API_URL}/api/sessions/${sessionId}/checkin-status`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    setAttendanceData(res.data)
+  } catch (err) {
+    console.error(err)
+  }
+}
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
@@ -710,7 +723,18 @@ export default function Messages() {
                     {selectedGroupChat.members?.filter(m => !m.leftAt).length} members · Expires {new Date(selectedGroupChat.expiresAt).toLocaleDateString()}
                   </p>
                 </div>
-                <button onClick={() => setLeaveGroupConfirm(selectedGroupChat)} className="text-red-400 hover:text-red-600 text-sm font-semibold transition">Leave</button>
+                <div className="flex items-center gap-2">
+  <button
+  onClick={() => {
+    fetchAttendance(selectedGroupChat.sessionId)
+    setShowAttendance(true)
+  }}
+  className="bg-blue-50 text-ncat-blue text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-blue-100 transition"
+>
+  📋 Attendance
+</button>
+  <button onClick={() => setLeaveGroupConfirm(selectedGroupChat)} className="text-red-400 hover:text-red-600 text-sm font-semibold transition">Leave</button>
+</div>
               </div>
               <div className="bg-white px-6 py-2 border-b border-gray-50 flex items-center gap-3 overflow-x-auto">
                 {selectedGroupChat.members?.filter(m => !m.leftAt).map((member, i) => (
@@ -767,7 +791,53 @@ export default function Messages() {
           ) : null}
         </div>
       </div>
+{/* Attendance Modal */}
+{showAttendance && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+    <div className="bg-white rounded-2xl w-full max-w-sm p-6">
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="text-lg font-bold text-ncat-blue">📋 Attendance</h2>
+        <button onClick={() => { setShowAttendance(false); setAttendanceData(null) }} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+      </div>
 
+      {!attendanceData ? (
+        <div className="text-center py-8">
+          <p className="text-gray-400 text-sm">Loading attendance...</p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {/* Members */}
+            {attendanceData.members.map(member => (
+              <div key={member.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 ${getColor(member.name)} rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden`}>
+                    {member.avatar ? (
+                      <img src={member.avatar} alt="" className="w-full h-full object-cover" />
+                    ) : getInitials(member.name)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{member.name}</p>
+                    {member.checkedInAt && (
+                      <p className="text-xs text-gray-400">at {formatTime(member.checkedInAt)}</p>
+                    )}
+                  </div>
+                </div>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${member.attended ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                  {member.attended ? '✅ Present' : '⏳ Not yet'}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-gray-400 text-center mt-4">
+            {attendanceData.members.filter(m => m.attended).length} / {attendanceData.members.length} checked in
+          </p>
+        </>
+      )}
+    </div>
+  </div>
+)}
       {/* Leave Group Chat Warning Modal */}
       {leaveGroupConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
