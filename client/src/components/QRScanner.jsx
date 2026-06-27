@@ -38,9 +38,10 @@ export default function QRScanner({ session, onSuccess, onClose }) {
           setSuccess(true)
 
           try {
-            await scanner.stop()
-          } catch (e) {}
-
+  if (scanner.isScanning) {
+    await scanner.stop()
+  }
+} catch (e) {}
           setTimeout(() => onSuccess(), 2000)
         } catch (err) {
           successRef.current = false
@@ -53,8 +54,12 @@ export default function QRScanner({ session, onSuccess, onClose }) {
     })
 
     return () => {
+  try {
+    if (scanner.isScanning) {
       scanner.stop().catch(() => {})
     }
+  } catch (e) {}
+}
   }, [])
 
   return (
