@@ -468,8 +468,7 @@ router.get('/:id/qr', authMiddleware, async (req, res) => {
 
     // Check time window — 30 min before to 1 hour after start
     const [hours, minutes] = session.time.split(':').map(Number)
-    const sessionDateTime = new Date(session.date)
-    sessionDateTime.setHours(hours, minutes, 0, 0)
+const sessionDateTime = new Date(`${session.date}T${session.time}:00-04:00`)
     const now = new Date()
     const minutesUntilStart = (sessionDateTime - now) / 1000 / 60
     const minutesAfterStart = (now - sessionDateTime) / 1000 / 60

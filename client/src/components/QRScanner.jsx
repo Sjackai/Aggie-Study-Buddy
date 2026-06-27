@@ -6,9 +6,8 @@ import API_URL from '../config'
 export default function QRScanner({ session, onSuccess, onClose }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [scanning, setScanning] = useState(false)
-  const scannerRef = useRef(null)
   const html5QrRef = useRef(null)
+  const successRef = useRef(false)
 
   useEffect(() => {
     const scanner = new Html5Qrcode('qr-reader')
@@ -18,31 +17,38 @@ export default function QRScanner({ session, onSuccess, onClose }) {
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       async (decodedText) => {
+        if (successRef.current) return
+        successRef.current = true
+
         try {
           const data = JSON.parse(decodedText)
           if (data.sessionId !== session.id) {
             setError('This QR code is for a different session')
+            successRef.current = false
             return
           }
 
-          await scanner.stop()
-
           const token = localStorage.getItem('token')
-          await axios.post(`${API_URL}/api/sessions/${session.id}/checkin`, 
+          await axios.post(
+            `${API_URL}/api/sessions/${session.id}/checkin`,
             { token: data.token },
             { headers: { Authorization: `Bearer ${token}` } }
           )
 
           setSuccess(true)
-setTimeout(() => {
-  onSuccess()
-}, 2500)
+
+          try {
+            await scanner.stop()
+          } catch (e) {}
+
+          setTimeout(() => onSuccess(), 2000)
         } catch (err) {
+          successRef.current = false
           setError(err.response?.data?.error || 'Failed to check in')
         }
       },
-      () => {} // ignore scan errors
-    ).catch(err => {
+      () => {}
+    ).catch(() => {
       setError('Could not access camera. Please allow camera permissions.')
     })
 
@@ -56,7 +62,10 @@ setTimeout(() => {
       <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-ncat-blue">Scan QR Code</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+          <button onClick={() => {
+            html5QrRef.current?.stop().catch(() => {})
+            onClose()
+          }} className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
         </div>
 
         {success ? (
