@@ -467,24 +467,17 @@ router.get('/:id/qr', authMiddleware, async (req, res) => {
     if (session.hostId !== req.userId) return res.status(403).json({ error: 'Only the host can show the QR code' })
 
     // Check time window — 30 min before to 1 hour after start
-    const [hours, minutes] = session.time.split(':').map(Number)
-const sessionDateTime = new Date(`${session.date}T${session.time}:00-04:00`)
-    const now = new Date()
-    const minutesUntilStart = (sessionDateTime - now) / 1000 / 60
-    const minutesAfterStart = (now - sessionDateTime) / 1000 / 60
-    console.log('Session time:', session.time, 'Session date:', session.date)
-    console.log('Session datetime:', sessionDateTime)
-    console.log('Now:', now)
-    console.log('Minutes until start:', minutesUntilStart)
-    console.log('Minutes after start:', minutesAfterStart)
+    const sessionDateTime = new Date(`${session.date}T${session.time}:00-04:00`)
+const now = new Date()
+const minutesUntilStart = (sessionDateTime - now) / 1000 / 60
+const minutesAfterStart = (now - sessionDateTime) / 1000 / 60
 
-    if (minutesUntilStart > 360) {
-  return res.status(400).json({ error: 'Too early to show QR code. Available 2 hours before start.' })
+if (minutesUntilStart > 360) {
+  return res.status(400).json({ error: 'Too early to show QR code. Available 6 hours before start.' })
 }
-if (minutesAfterStart > 300) {
+if (minutesAfterStart > 360) {
   return res.status(400).json({ error: 'QR code window has expired.' })
 }
-
     const token = generateQRToken(session.id)
     const qrData = JSON.stringify({ sessionId: session.id, token })
     const qrImage = await QRCode.toDataURL(qrData)
