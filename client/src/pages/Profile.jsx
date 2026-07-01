@@ -16,7 +16,7 @@ const getInitials = (name) => {
   if (parts.length === 1) return parts[0][0].toUpperCase()
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
-const [xpData, setXpData] = useState(null)
+
 const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500']
 const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
 
@@ -105,6 +105,7 @@ export default function Profile() {
   const avatarInputRef = useRef(null)
   const bannerInputRef = useRef(null)
   const [form, setForm] = useState({ name: '', major: '', year: '', bio: '', isPrivate: false })
+  const [xpData, setXpData] = useState(null)
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })

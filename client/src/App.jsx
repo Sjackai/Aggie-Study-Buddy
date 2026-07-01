@@ -18,6 +18,7 @@ import BrainGames from './pages/BrainGames'
 import BrainGamesHub from './pages/BrainGamesHub'
 import FlashChallenge from './pages/FlashChallenge'
 import DailyTrivia from './pages/DailyTrivia'
+import Leaderboard from './pages/Leaderboard'
 
 
 
