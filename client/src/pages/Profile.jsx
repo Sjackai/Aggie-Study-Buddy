@@ -9,13 +9,14 @@ import courses from '../data/courses'
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 
+
 const getInitials = (name) => {
   if (!name) return '?'
   const parts = name.trim().split(' ')
   if (parts.length === 1) return parts[0][0].toUpperCase()
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
-
+const [xpData, setXpData] = useState(null)
 const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500']
 const getColor = (name) => colors[(name?.charCodeAt(0) || 0) % colors.length]
 
@@ -55,6 +56,7 @@ const buildVibeStatus = (template, fill) => {
   if (t.fills.length === 0) return t.label
   return `${t.label} ${fill || '...'}`
 }
+
 
 function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
   return centerCrop(makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight), mediaWidth, mediaHeight)
@@ -115,6 +117,7 @@ export default function Profile() {
     fetchProfile(token)
     fetchSessions(token)
     fetchKudos(token)
+    fetchXP(token)
   }, [])
 
   useEffect(() => {
@@ -147,7 +150,16 @@ export default function Profile() {
       setSessions(res.data)
     } catch (err) { console.error(err) }
   }
-
+const fetchXP = async (token) => {
+  try {
+    const res = await axios.get(`${API_URL}/api/games/my-xp`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    setXpData(res.data)
+  } catch (err) {
+    console.error(err)
+  }
+}
   const fetchKudos = async (token) => {
     try {
       const res = await axios.get(`${API_URL}/api/kudos/my`, { headers: { Authorization: `Bearer ${token}` } })
@@ -466,17 +478,19 @@ export default function Profile() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {[
-            { number: hostedSessions.length, label: 'Sessions Hosted' },
-            { number: joinedSessions.length, label: 'Sessions Joined' },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:shadow-md transition">
-              <p className="text-3xl font-bold text-ncat-blue mb-1">{stat.number}</p>
-              <p className="text-gray-500 text-sm">{stat.label}</p>
-            </div>
-          ))}
-        </div>
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  {[
+    { number: hostedSessions.length, label: 'Sessions Hosted' },
+    { number: joinedSessions.length, label: 'Sessions Joined' },
+    { number: xpData?.totalXP || 0, label: 'Total XP ⚡' },
+    { number: xpData?.gamesWon || 0, label: 'Games Won 🏆' },
+  ].map((stat, i) => (
+    <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:shadow-md transition">
+      <p className="text-3xl font-bold text-ncat-blue mb-1">{stat.number}</p>
+      <p className="text-gray-500 text-sm">{stat.label}</p>
+    </div>
+  ))}
+</div>
 
         {/* Bio */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
@@ -568,7 +582,26 @@ export default function Profile() {
             </div>
           </div>
         )}
-
+        {/* Brain Games Stats */}
+{xpData && xpData.gamesPlayed > 0 && (
+  <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
+    <h2 className="text-lg font-bold text-ncat-blue mb-4">Brain Games 🎮</h2>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[
+        { label: 'Total XP', value: xpData.totalXP, emoji: '⚡' },
+        { label: 'Games Played', value: xpData.gamesPlayed, emoji: '🎮' },
+        { label: 'Games Won', value: xpData.gamesWon, emoji: '🏆' },
+        { label: 'Win Streak', value: xpData.winStreak, emoji: '🔥' },
+      ].map((stat, i) => (
+        <div key={i} className="bg-gray-50 rounded-2xl p-4 text-center">
+          <p className="text-2xl mb-1">{stat.emoji}</p>
+          <p className="text-2xl font-bold text-ncat-blue">{stat.value}</p>
+          <p className="text-xs text-gray-500">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
         {/* Achievements */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
           <div className="flex justify-between items-center mb-4">

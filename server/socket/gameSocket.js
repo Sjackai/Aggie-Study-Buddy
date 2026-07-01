@@ -278,6 +278,7 @@ io.to(`game:${gameId}`).emit('question', {
  scheduleNextGame()
 setInterval(scheduleNextGame, 10 * 60 * 1000) // every 10 min for testing
 
-  // Expose for routes
+ // Expose for routes
+  global.activeGames = activeGames
   return { activeGames, scheduleNextGame }
 }

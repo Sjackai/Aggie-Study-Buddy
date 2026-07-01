@@ -10,6 +10,7 @@ import hashtags from '../data/hashtags'
 import QuoteOfDay from '../components/QuoteOfDay'
 import DailyFacts from '../components/DailyFacts'
 import QRScanner from '../components/QRScanner'
+import BrainGamesBanner from '../components/BrainGamesBanner'
 const formatTime = (time) => {
   if (!time) return ''
   const [hours, minutes] = time.split(':')
@@ -52,7 +53,7 @@ const [scanSession, setScanSession] = useState(null)
   const [activeTab, setActiveTab] = useState('upcoming')
   const [activeHashtagCategory, setActiveHashtagCategory] = useState('Session Type')
   const [newSession, setNewSession] = useState({
-  courseCode: '', courseName: '', date: '', time: '', location: '', roomDetails: '', description: '', maxParticipants: 6, tags: []
+  courseCode: '', courseName: '', date: '', time: '', location: '', roomDetails: '', description: '', maxParticipants: 6, tags: [], duration: 60
 })
   const notifRef = useRef(null)
 
@@ -239,7 +240,7 @@ useEffect(() => {
         headers: { Authorization: `Bearer ${token}` }
       })
       setShowCreate(false)
-      setNewSession({ courseCode: '', courseName: '', date: '', time: '', location: '', description: '', maxParticipants: 6, tags: [] })
+      setNewSession({ courseCode: '', courseName: '', date: '', time: '', location: '', roomDetails: '', description: '', maxParticipants: 6, tags: [], duration: 60 })
       fetchMySessions(token, stored.id)
       showToast('Session created! Check Messages for your group chat 💬')
     } catch (err) {
@@ -597,6 +598,11 @@ useEffect(() => {
     ))}
   </div>
 </div>
+
+      {/* Brain Games Banner */}
+      <BrainGamesBanner />
+
+      {/* Recommended Sessions */}
  {/* Recommended Sessions */}
         {recommended.length > 0 && (
           <div className="mb-10">
@@ -922,8 +928,10 @@ useEffect(() => {
                 <div>
                   <label className="block text-sm font-semibold text-ncat-blue mb-1">Date</label>
                   <input type="date" value={newSession.date}
-                    onChange={e => setNewSession({...newSession, date: e.target.value})}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue" />
+  onChange={e => setNewSession({...newSession, date: e.target.value})}
+  min={new Date().toISOString().split('T')[0]}
+  max={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-ncat-blue mb-1">Time</label>
@@ -940,6 +948,31 @@ useEffect(() => {
                   </select>
                 </div>
               </div>
+              <div>
+  <label className="block text-sm font-semibold text-ncat-blue mb-1">Duration</label>
+  <select value={newSession.duration} onChange={e => setNewSession({...newSession, duration: parseInt(e.target.value)})}
+    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue">
+    <option value={30}>30 minutes</option>
+    <option value={60}>1 hour</option>
+    <option value={90}>1.5 hours</option>
+    <option value={120}>2 hours</option>
+    <option value={180}>3 hours</option>
+    <option value={240}>4 hours</option>
+  </select>
+  {newSession.time && (
+    <p className="text-xs text-gray-400 mt-1.5">
+      ⏰ Ends at {(() => {
+        const [h, m] = newSession.time.split(':').map(Number)
+        const end = new Date()
+        end.setHours(h, m + newSession.duration, 0, 0)
+        const eh = end.getHours()
+        const em = String(end.getMinutes()).padStart(2, '0')
+        const ampm = eh >= 12 ? 'PM' : 'AM'
+        return `${eh % 12 || 12}:${em} ${ampm}`
+      })()}
+    </p>
+  )}
+</div>
 
               <div>
                 <label className="block text-sm font-semibold text-ncat-blue mb-1">Location</label>

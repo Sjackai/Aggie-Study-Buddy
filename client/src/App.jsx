@@ -15,6 +15,9 @@ import VerifyEmail from './pages/VerifyEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import BrainGames from './pages/BrainGames'
+import BrainGamesHub from './pages/BrainGamesHub'
+import FlashChallenge from './pages/FlashChallenge'
+import DailyTrivia from './pages/DailyTrivia'
 
 
 
@@ -38,7 +41,11 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmail />} />
 <Route path="/forgot-password" element={<ForgotPassword />} />
 <Route path="/reset-password" element={<ResetPassword />} />
-<Route path="/games" element={<BrainGames />} />
+<Route path="/games" element={<BrainGamesHub />} />
+<Route path="/games/live" element={<BrainGames />} />
+<Route path="/games/flash" element={<FlashChallenge />} />
+<Route path="/games/trivia" element={<DailyTrivia />} />
+
       </Routes>
     </BrowserRouter>
   )

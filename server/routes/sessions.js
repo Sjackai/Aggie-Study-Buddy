@@ -33,8 +33,18 @@ router.get('/', async (req, res) => {
 // CREATE SESSION
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { courseCode, courseName, date, time, location, roomDetails, description, maxParticipants, tags } = req.body
-    const session = await prisma.session.create({
+    const { courseCode, courseName, date, time, location, roomDetails, description, maxParticipants, tags, duration } = req.body
+
+// Validate date is not more than 7 days out
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+const sessionDate = new Date(date)
+sessionDate.setHours(0, 0, 0, 0)
+const daysDiff = Math.floor((sessionDate - today) / (1000 * 60 * 60 * 24))
+if (daysDiff < 0) return res.status(400).json({ error: 'Session date cannot be in the past' })
+if (daysDiff > 7) return res.status(400).json({ error: 'Sessions can only be created up to 7 days in advance' })
+
+const session = await prisma.session.create({
       data: {
         courseCode,
         courseName,
@@ -45,12 +55,12 @@ router.post('/', authMiddleware, async (req, res) => {
         description,
         maxParticipants: maxParticipants || 6,
         hostId: req.userId,
-        tags: tags || []
+        tags: tags || [],
+        duration: duration || 60
       }
     })
-
-    const sessionDate = new Date(date)
-    const expiresAt = new Date(sessionDate)
+    const chatDate = new Date(date)
+    const expiresAt = new Date(chatDate)
     expiresAt.setDate(expiresAt.getDate() + 1)
 
     const groupChat = await prisma.groupChat.create({
