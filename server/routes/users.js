@@ -90,7 +90,7 @@ router.get('/profile/:userId', authMiddleware, async (req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.userId },select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, banners: true, borderColor: true, vibeTemplate: true, vibeFill: true, isPrivate: true, emailVerified: true, createdAt: true }
+      where: { id: req.userId },select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, banners: true, borderColor: true, vibeTemplate: true, vibeFill: true, isPrivate: true, emailVerified: true, gameNotifications: true, createdAt: true }
      
     })
     res.json(user)
@@ -207,10 +207,10 @@ router.get('/partners', authMiddleware, async (req, res) => {
 // UPDATE PROFILE
 router.put('/me', authMiddleware, async (req, res) => {
   try {
-    const { name, major, year, bio, avatar, isPrivate, borderColor, vibeTemplate, vibeFill } = req.body
+    const { name, major, year, bio, avatar, isPrivate, borderColor, vibeTemplate, vibeFill, gameNotifications } = req.body
 const user = await prisma.user.update({
   where: { id: req.userId },
-  data: { name, major, year, bio, avatar, isPrivate, borderColor, vibeTemplate, vibeFill },
+  data: { name, major, year, bio, avatar, isPrivate, borderColor, vibeTemplate, vibeFill, gameNotifications: gameNotifications !== undefined ? gameNotifications : undefined },
   select: { id: true, name: true, email: true, major: true, year: true, bio: true, avatar: true, banners: true, borderColor: true, vibeTemplate: true, vibeFill: true, isPrivate: true }
 })
     res.json(user)

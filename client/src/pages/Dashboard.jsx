@@ -558,27 +558,45 @@ useEffect(() => {
           <p className="text-blue-200 relative z-10">{user?.major} · {user?.year} · NC A&T State University</p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
-          {[
-            { emoji: '➕', label: 'Create Session', color: 'bg-green-50', accent: 'bg-green-400', onClick: () => setShowCreate(true) },
-            { emoji: '🔍', label: 'Find Sessions', color: 'bg-blue-50', accent: 'bg-blue-400', onClick: () => navigate('/find-sessions') },
-            { emoji: '🤝', label: 'Find Partners', color: 'bg-yellow-50', accent: 'bg-yellow-400', onClick: () => navigate('/partners') },
-            { emoji: '💬', label: 'Messages', color: 'bg-red-50', accent: 'bg-red-400', onClick: () => navigate('/messages'), badge: totalMessageNotifs },
-            { emoji: '🗺️', label: 'Campus Map', color: 'bg-purple-50', accent: 'bg-purple-400', onClick: () => navigate('/map') },
-          ].map((action, i) => (
-            <button key={i} onClick={action.onClick} className={`${action.color} rounded-2xl p-5 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all relative shadow-sm overflow-hidden group`}>
-              <div className={`absolute top-0 left-0 right-0 h-1 ${action.accent}`} />
-              <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{action.emoji}</div>
-              <p className="text-sm font-semibold text-gray-700">{action.label}</p>
-              {action.badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md">
-                  {action.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+ {/* Quick Actions */}
+<div className="space-y-3 mb-10">
+  {/* Row 1 — Core */}
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {[
+      { emoji: '➕', label: 'Create Session', color: 'bg-green-50', accent: 'bg-green-400', onClick: () => setShowCreate(true) },
+      { emoji: '🔍', label: 'Find Sessions', color: 'bg-blue-50', accent: 'bg-blue-400', onClick: () => navigate('/find-sessions') },
+      { emoji: '🤝', label: 'Find Partners', color: 'bg-yellow-50', accent: 'bg-yellow-400', onClick: () => navigate('/partners') },
+      { emoji: '💬', label: 'Messages', color: 'bg-red-50', accent: 'bg-red-400', onClick: () => navigate('/messages'), badge: totalMessageNotifs },
+    ].map((action, i) => (
+      <button key={i} onClick={action.onClick} className={`${action.color} rounded-2xl p-5 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all relative shadow-sm overflow-hidden group`}>
+        <div className={`absolute top-0 left-0 right-0 h-1 ${action.accent}`} />
+        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{action.emoji}</div>
+        <p className="text-sm font-semibold text-gray-700">{action.label}</p>
+        {action.badge > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md">
+            {action.badge}
+          </span>
+        )}
+      </button>
+    ))}
+  </div>
+
+  {/* Row 2 — Features */}
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {[
+      { emoji: '🎮', label: 'Brain Games', color: 'bg-pink-50', accent: 'bg-pink-400', onClick: () => navigate('/games') },
+      { emoji: '🗺️', label: 'Campus Map', color: 'bg-purple-50', accent: 'bg-purple-400', onClick: () => navigate('/map') },
+      { emoji: '🏆', label: 'Leaderboard', color: 'bg-orange-50', accent: 'bg-orange-400', onClick: () => navigate('/leaderboard') },
+      { emoji: '👤', label: 'My Profile', color: 'bg-teal-50', accent: 'bg-teal-400', onClick: () => navigate('/profile') },
+    ].map((action, i) => (
+      <button key={i} onClick={action.onClick} className={`${action.color} rounded-2xl p-5 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all relative shadow-sm overflow-hidden group`}>
+        <div className={`absolute top-0 left-0 right-0 h-1 ${action.accent}`} />
+        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{action.emoji}</div>
+        <p className="text-sm font-semibold text-gray-700">{action.label}</p>
+      </button>
+    ))}
+  </div>
+</div>
  {/* Recommended Sessions */}
         {recommended.length > 0 && (
           <div className="mb-10">

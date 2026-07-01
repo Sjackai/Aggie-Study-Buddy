@@ -521,6 +521,39 @@ export default function Profile() {
             </div>
           </div>
         </div>
+        {/* Notification Settings */}
+<div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
+  <h2 className="text-lg font-bold text-ncat-blue mb-4">Notification Settings 🔔</h2>
+  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+    <div className="flex items-center gap-3">
+      <span className="text-2xl">{user?.gameNotifications !== false ? '🔔' : '🔕'}</span>
+      <div>
+        <p className="text-sm font-semibold text-gray-700">Brain Game Alerts</p>
+        <p className="text-xs text-gray-400 mt-0.5">Get notified when a live Brain Game is starting</p>
+      </div>
+    </div>
+    <button
+      onClick={async () => {
+        const token = localStorage.getItem('token')
+        const newVal = user?.gameNotifications === false ? true : false
+        try {
+          const res = await axios.put(`${API_URL}/api/users/me`,
+            { ...form, gameNotifications: newVal },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          setUser(res.data)
+          localStorage.setItem('user', JSON.stringify(res.data))
+          showToast(newVal ? 'Game notifications enabled 🔔' : 'Game notifications disabled 🔕')
+        } catch (err) {
+          showToast('Failed to update', 'error')
+        }
+      }}
+      className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${user?.gameNotifications !== false ? 'bg-ncat-blue' : 'bg-gray-300'}`}
+    >
+      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${user?.gameNotifications !== false ? 'translate-x-7' : 'translate-x-1'}`} />
+    </button>
+  </div>
+</div>
 
         {/* Kudos */}
         {kudosData && Object.keys(kudosData.tagCounts || {}).length > 0 && (
