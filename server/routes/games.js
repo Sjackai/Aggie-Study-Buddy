@@ -175,13 +175,56 @@ router.get('/daily-challenge', authMiddleware, async (req, res) => {
 
     const myAttempt = challenge.attempts[0] || null
 
-    // Get leaderboard
-    const leaderboard = await prisma.dailyChallengeAttempt.findMany({
-      where: { challengeId: challenge.id, isCorrect: true },
-      orderBy: { timeSeconds: 'asc' },
-      take: 10,
-      include: { user: { select: { id: true, name: true, avatar: true, isPrivate: true } } }
+    // GET LEADERBOARD
+router.get('/leaderboard', authMiddleware, async (req, res) => {
+  try {
+    const { type = 'alltime-xp' } = req.query
+
+    let orderBy = { totalXP: 'desc' }
+    if (type.includes('wins')) orderBy = { gamesWon: 'desc' }
+
+    // For daily/weekly we need to filter by date
+    const now = new Date()
+    let dateFilter = {}
+
+    if (type.startsWith('daily')) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      dateFilter = { updatedAt: { gte: today } }
+    } else if (type.startsWith('weekly')) {
+      const weekAgo = new Date()
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      dateFilter = { updatedAt: { gte: weekAgo } }
+    }
+
+    const leaderboard = await prisma.userXP.findMany({
+      where: dateFilter,
+      orderBy,
+      take: 20,
+      include: {
+        user: {
+          select: { id: true, name: true, avatar: true, borderColor: true, isPrivate: true }
+        }
+      }
     })
+
+    const formatted = leaderboard.map((entry, i) => ({
+      rank: i + 1,
+      userId: entry.userId,
+      name: entry.user.isPrivate ? 'Anonymous Aggie 🐾' : entry.user.name,
+      avatar: entry.user.isPrivate ? null : entry.user.avatar,
+      totalXP: entry.totalXP,
+      gamesPlayed: entry.gamesPlayed,
+      gamesWon: entry.gamesWon,
+      isPrivate: entry.user.isPrivate
+    }))
+
+    res.json(formatted)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch leaderboard' })
+  }
+})
 
     res.json({
       id: challenge.id,

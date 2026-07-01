@@ -45,6 +45,7 @@ function App() {
 <Route path="/games/live" element={<BrainGames />} />
 <Route path="/games/flash" element={<FlashChallenge />} />
 <Route path="/games/trivia" element={<DailyTrivia />} />
+<Route path="/games/leaderboard" element={<Leaderboard />} />
 
       </Routes>
     </BrowserRouter>

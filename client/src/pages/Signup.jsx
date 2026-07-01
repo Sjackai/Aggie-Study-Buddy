@@ -1,7 +1,7 @@
 import Logo from '../components/Logo'
 import API_URL from '../config'
 import MajorSelector from '../components/MajorSelector'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
@@ -154,14 +154,15 @@ export default function Signup() {
               </div>
             </div>
             <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Create a password (min 8 characters)"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
-              required
-            />
+  type="password"
+  name="password"
+  value={form.password}
+  onChange={handleChange}
+  onFocus={handleFocusScroll}
+  placeholder="Create a password (min 8 characters)"
+  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
+  required
+/>
             {strength && (
               <div className="mt-2">
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -180,11 +181,12 @@ export default function Signup() {
           <div>
             <label className="block text-sm font-semibold text-ncat-blue mb-1">Confirm Password</label>
             <input
-              type="password"
-              name="confirmPassword"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm your password"
+  type="password"
+  name="confirmPassword"
+  value={form.confirmPassword}
+  onChange={handleChange}
+  onFocus={handleFocusScroll}
+  placeholder="Confirm your password"
               className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue ${
                 form.confirmPassword && form.password !== form.confirmPassword
                   ? 'border-red-300 bg-red-50'
@@ -207,19 +209,21 @@ export default function Signup() {
             <div>
               <label className="block text-sm font-semibold text-ncat-blue mb-1">Major <span className="text-red-400">*</span></label>
               <MajorSelector
-                value={form.major}
-                onChange={(val) => setForm({...form, major: val})}
-              />
+  value={form.major}
+  onChange={(val) => setForm({...form, major: val})}
+  onFocus={handleFocusScroll}
+/>
             </div>
             <div>
               <label className="block text-sm font-semibold text-ncat-blue mb-1">Year <span className="text-red-400">*</span></label>
               <select
-                name="year"
-                value={form.year}
-                onChange={handleChange}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
-                required
-              >
+  name="year"
+  value={form.year}
+  onChange={handleChange}
+  onFocus={handleFocusScroll}
+  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue"
+  required
+>
                 <option value="">Select</option>
                 <option value="Freshman">Freshman</option>
                 <option value="Sophomore">Sophomore</option>

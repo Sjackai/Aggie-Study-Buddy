@@ -255,7 +255,9 @@ export default function BrainGamesHub() {
               View full →
             </button>
           </div>
-          <p className="text-gray-400 text-sm text-center py-4">Coming soon — daily, weekly and all-time rankings!</p>
+          <button onClick={() => navigate('/games/leaderboard')} className="w-full bg-ncat-blue text-white font-bold py-3 rounded-xl hover:opacity-90 transition">
+  View Full Leaderboard 🏆
+</button>
         </div>
       </div>
 

@@ -992,6 +992,19 @@ useEffect(() => {
                   <option>Smith Hall</option>
                 </select>
               </div>
+              <div>
+  <label className="block text-sm font-semibold text-ncat-blue mb-1">
+    Room/Area <span className="text-gray-400 font-normal">(optional)</span>
+  </label>
+  <input
+    type="text"
+    placeholder={newSession.location ? `e.g. Room 204, 2nd floor, near elevator` : 'Select a building first'}
+    value={newSession.roomDetails}
+    onChange={e => setNewSession({...newSession, roomDetails: e.target.value})}
+    disabled={!newSession.location}
+    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ncat-blue disabled:bg-gray-50 disabled:text-gray-400"
+  />
+</div>
 
               <div>
                 <label className="block text-sm font-semibold text-ncat-blue mb-1">Description</label>
