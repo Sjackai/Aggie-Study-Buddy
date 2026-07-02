@@ -582,21 +582,22 @@ useEffect(() => {
     ))}
   </div>
 
-  {/* Row 2 — Features */}
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-    {[
-      { emoji: '🎮', label: 'Brain Games', color: 'bg-pink-50', accent: 'bg-pink-400', onClick: () => navigate('/games') },
-      { emoji: '🗺️', label: 'Campus Map', color: 'bg-purple-50', accent: 'bg-purple-400', onClick: () => navigate('/map') },
-      { emoji: '🏆', label: 'Leaderboard', color: 'bg-orange-50', accent: 'bg-orange-400', onClick: () => navigate('/leaderboard') },
-      { emoji: '👤', label: 'My Profile', color: 'bg-teal-50', accent: 'bg-teal-400', onClick: () => navigate('/profile') },
-    ].map((action, i) => (
-      <button key={i} onClick={action.onClick} className={`${action.color} rounded-2xl p-5 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all relative shadow-sm overflow-hidden group`}>
-        <div className={`absolute top-0 left-0 right-0 h-1 ${action.accent}`} />
-        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{action.emoji}</div>
-        <p className="text-sm font-semibold text-gray-700">{action.label}</p>
-      </button>
-    ))}
-  </div>
+{/* Row 2 — Features */}
+<div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+  {[
+    { emoji: '🎮', label: 'Brain Games', color: 'bg-pink-50', accent: 'bg-pink-400', onClick: () => navigate('/games') },
+    { emoji: '🗺️', label: 'Campus Map', color: 'bg-purple-50', accent: 'bg-purple-400', onClick: () => navigate('/map') },
+    { emoji: '🏆', label: 'Leaderboard', color: 'bg-orange-50', accent: 'bg-orange-400', onClick: () => navigate('/games/leaderboard') },
+    { emoji: '🎖️', label: 'Achievements', color: 'bg-indigo-50', accent: 'bg-indigo-400', onClick: () => navigate('/achievements') },
+    { emoji: '👤', label: 'My Profile', color: 'bg-teal-50', accent: 'bg-teal-400', onClick: () => navigate('/profile') },
+  ].map((action, i) => (
+    <button key={i} onClick={action.onClick} className={`${action.color} rounded-2xl p-5 text-center hover:shadow-lg hover:-translate-y-0.5 transition-all relative shadow-sm overflow-hidden group`}>
+      <div className={`absolute top-0 left-0 right-0 h-1 ${action.accent}`} />
+      <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{action.emoji}</div>
+      <p className="text-sm font-semibold text-gray-700">{action.label}</p>
+    </button>
+  ))}
+</div>
 </div>
 
       {/* Brain Games Banner */}

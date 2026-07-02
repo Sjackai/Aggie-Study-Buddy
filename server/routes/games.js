@@ -226,7 +226,7 @@ router.get('/leaderboard', authMiddleware, async (req, res) => {
   }
 })
 
-    res.json({
+   res.json({
       id: challenge.id,
       date: challenge.date,
       question: myAttempt ? challenge.question : {
@@ -237,7 +237,7 @@ router.get('/leaderboard', authMiddleware, async (req, res) => {
         category: challenge.question.category
       },
       myAttempt,
-      leaderboard: leaderboard.map((a, i) => ({
+      leaderboard: (challenge.leaderboard || []).map((a, i) => ({
         rank: i + 1,
         name: a.user.isPrivate ? 'Anonymous Aggie 🐾' : a.user.name,
         avatar: a.user.isPrivate ? null : a.user.avatar,
@@ -399,18 +399,16 @@ router.post('/daily-trivia/submit', authMiddleware, async (req, res) => {
 router.get('/achievements', authMiddleware, async (req, res) => {
   try {
     const { checkAndUnlockAchievements, getUserStats } = require('../utils/achievementChecker')
-    
     // Get all achievements
-    const allAchievements = await prisma.achievement.findMany({
-      orderBy: [{ category: 'asc' }, { tier: 'asc' }]
-    })
+const allAchievements = await prisma.achievement.findMany({
+  orderBy: [{ category: 'asc' }, { tier: 'asc' }]
+})
 
-    // Get earned achievements
-    const earned = await prisma.userAchievement.findMany({
-      where: { userId: req.userId },
-      include: { achievement: true }
-    })
-
+// Get earned achievements
+const earned = await prisma.userAchievement.findMany({
+  where: { userId: req.userId },
+  include: { achievement: true }
+})
     const earnedMap = {}
     earned.forEach(e => { earnedMap[e.achievementId] = e.earnedAt })
 
