@@ -315,27 +315,26 @@ const fetchXP = async (token) => {
         </button>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-{/* Profile Completion Bar */}
-{completionScore < 100 && (
-  <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
-    <div className="flex justify-between items-center mb-2">
-      <p className="text-sm font-semibold text-gray-700">Profile Completion</p>
-      <p className="text-sm font-bold text-ncat-blue">{completionScore}%</p>
-    </div>
-    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-      <div className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${completionScore}%`, background: 'linear-gradient(90deg, #0039A6, #FFB81C)' }} />
-    </div>
-    <p className="text-xs text-gray-400 mt-1.5">
-      {!user?.avatar && '📸 Add a profile picture · '}
-      {banners.length === 0 && '🖼️ Add a banner · '}
-      {!user?.bio && '✍️ Add a bio · '}
-      {!user?.vibeTemplate && '🔥 Set your study vibe'}
-    </p>
-  </div>
-)}
-        </div>
+     <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Profile Completion Bar */}
+        {completionScore < 100 && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-semibold text-gray-700">Profile Completion</p>
+              <p className="text-sm font-bold text-ncat-blue">{completionScore}%</p>
+            </div>
+            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${completionScore}%`, background: 'linear-gradient(90deg, #0039A6, #FFB81C)' }} />
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">
+              {!user?.avatar && '📸 Add a profile picture · '}
+              {banners.length === 0 && '🖼️ Add a banner · '}
+              {!user?.bio && '✍️ Add a bio · '}
+              {!user?.vibeTemplate && '🔥 Set your study vibe'}
+            </p>
+          </div>
+        )}
 
         {/* Banner Slideshow */}
         <div className="relative rounded-2xl overflow-hidden mb-0 group">
