@@ -395,4 +395,39 @@ router.post('/daily-trivia/submit', authMiddleware, async (req, res) => {
   }
 })
 
+// GET USER ACHIEVEMENTS
+router.get('/achievements', authMiddleware, async (req, res) => {
+  try {
+    const { checkAndUnlockAchievements, getUserStats } = require('../utils/achievementChecker')
+    
+    // Get all achievements
+    const allAchievements = await prisma.achievement.findMany({
+      orderBy: [{ category: 'asc' }, { tier: 'asc' }]
+    })
+
+    // Get earned achievements
+    const earned = await prisma.userAchievement.findMany({
+      where: { userId: req.userId },
+      include: { achievement: true }
+    })
+
+    const earnedMap = {}
+    earned.forEach(e => { earnedMap[e.achievementId] = e.earnedAt })
+
+    // Check for new unlocks
+    const stats = await getUserStats(req.userId)
+    const newlyUnlocked = await checkAndUnlockAchievements(req.userId, stats)
+
+    const result = allAchievements.map(a => ({
+      ...a,
+      earned: !!earnedMap[a.id],
+      earnedAt: earnedMap[a.id] || null
+    }))
+
+    res.json({ achievements: result, newlyUnlocked, stats })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to fetch achievements' })
+  }
+})
 module.exports = router

@@ -45,6 +45,7 @@ xp               UserXP?
 gameNotifications Boolean @default(true)
 dailyChallengeAttempts DailyChallengeAttempt[]
 dailyTriviaAttempts    DailyTriviaAttempt[]
+userAchievements UserAchievement[]
 }
 model Session {
   id              String   @id @default(cuid())
@@ -323,4 +324,31 @@ model DailyTriviaAttempt {
 
   user   User   @relation(fields: [userId], references: [id])
   userId String
+}
+model Achievement {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g. "sessions_hosted"
+  tier        Int      // 1, 2, or 3
+  name        String   // short name e.g. "First Steps"
+  description String   // what you need to do
+  icon        String   // emoji
+  category    String   // Sessions, Messages, Brain Games, etc.
+  xpReward    Int      @default(10)
+  requirement Int      // the number needed to unlock
+  createdAt   DateTime @default(now())
+
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  earnedAt      DateTime @default(now())
+
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  achievementId String
+
+  @@unique([userId, achievementId])
 }

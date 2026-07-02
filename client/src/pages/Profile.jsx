@@ -8,6 +8,7 @@ import MajorSelector from '../components/MajorSelector'
 import courses from '../data/courses'
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
+import AchievementUnlock from '../components/AchievementUnlock'
 
 
 const getInitials = (name) => {
@@ -106,6 +107,7 @@ export default function Profile() {
   const bannerInputRef = useRef(null)
   const [form, setForm] = useState({ name: '', major: '', year: '', bio: '', isPrivate: false })
   const [xpData, setXpData] = useState(null)
+  const [unlockQueue, setUnlockQueue] = useState([])
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
@@ -137,6 +139,13 @@ export default function Profile() {
     try {
       const res = await axios.get(`${API_URL}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
       setUser(res.data)
+      // Check for new achievements on profile load
+const achieveRes = await axios.get(`${API_URL}/api/games/achievements`, {
+  headers: { Authorization: `Bearer ${token}` }
+})
+if (achieveRes.data.newlyUnlocked?.length > 0) {
+  setUnlockQueue(achieveRes.data.newlyUnlocked)
+}
       setForm({ name: res.data.name || '', major: res.data.major || '', year: res.data.year || '', bio: res.data.bio || '', isPrivate: res.data.isPrivate || false })
       setSelectedTemplate(res.data.vibeTemplate || '')
       setSelectedFill(res.data.vibeFill || '')
@@ -612,11 +621,11 @@ const fetchXP = async (token) => {
         {/* Achievements */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-ncat-blue">Achievements 🏆</h2>
-            <button onClick={() => setShowAllAchievements(!showAllAchievements)} className="text-ncat-blue text-sm font-semibold hover:underline transition">
-              {showAllAchievements ? 'Show Less' : `Show All (${allAchievements.length})`}
-            </button>
-          </div>
+  <h2 className="text-lg font-bold text-ncat-blue">Achievements 🏆</h2>
+  <button onClick={() => navigate('/achievements')} className="text-ncat-blue text-sm font-semibold hover:underline transition">
+    View All →
+  </button>
+</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {displayedAchievements.map((achievement, i) => (
               <div key={i} className={`p-4 rounded-xl border text-center transition ${achievement.earned ? 'border-ncat-gold bg-yellow-50' : 'border-gray-100 bg-gray-50 opacity-50'}`}>
@@ -791,7 +800,12 @@ const fetchXP = async (token) => {
           </div>
         </div>
       )}
-
+{unlockQueue.length > 0 && (
+  <AchievementUnlock
+    achievement={unlockQueue[0]}
+    onClose={() => setUnlockQueue(prev => prev.slice(1))}
+  />
+)}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )

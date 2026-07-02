@@ -19,7 +19,7 @@ import BrainGamesHub from './pages/BrainGamesHub'
 import FlashChallenge from './pages/FlashChallenge'
 import DailyTrivia from './pages/DailyTrivia'
 import Leaderboard from './pages/Leaderboard'
-
+import Achievements from './pages/Achievements'
 
 
 
@@ -47,6 +47,7 @@ function App() {
 <Route path="/games/flash" element={<FlashChallenge />} />
 <Route path="/games/trivia" element={<DailyTrivia />} />
 <Route path="/games/leaderboard" element={<Leaderboard />} />
+<Route path="/achievements" element={<Achievements />} />
 
       </Routes>
     </BrowserRouter>
