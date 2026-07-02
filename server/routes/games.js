@@ -428,4 +428,23 @@ const earned = await prisma.userAchievement.findMany({
     res.status(500).json({ error: 'Failed to fetch achievements' })
   }
 })
+// SEED ACHIEVEMENTS (run once then remove)
+router.post('/seed-achievements', async (req, res) => {
+  try {
+    const achievements = require('../seedAchievements').achievements
+    let count = 0
+    for (const a of achievements) {
+      await prisma.achievement.upsert({
+        where: { key: a.key },
+        create: a,
+        update: a
+      })
+      count++
+    }
+    res.json({ message: `Seeded ${count} achievements!` })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: err.message })
+  }
+})
 module.exports = router

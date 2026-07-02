@@ -260,6 +260,8 @@ async function main() {
     })
   }
   console.log(`✅ Seeded ${achievements.length} achievements!`)
+  
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect())
+module.exports = { achievements }
