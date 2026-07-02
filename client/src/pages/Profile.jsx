@@ -316,25 +316,25 @@ const fetchXP = async (token) => {
       </nav>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-
-        {/* Profile Completion Bar */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <p className="text-sm font-semibold text-gray-700">Profile Completion</p>
-            <p className="text-sm font-bold text-ncat-blue">{completionScore}%</p>
-          </div>
-          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${completionScore}%`, background: completionScore === 100 ? 'linear-gradient(90deg, #22c55e, #16a34a)' : 'linear-gradient(90deg, #0039A6, #FFB81C)' }} />
-          </div>
-          {completionScore < 100 && (
-            <p className="text-xs text-gray-400 mt-1.5">
-              {!user?.avatar && '📸 Add a profile picture · '}
-              {banners.length === 0 && '🖼️ Add a banner · '}
-              {!user?.bio && '✍️ Add a bio · '}
-              {!user?.vibeTemplate && '🔥 Set your study vibe'}
-            </p>
-          )}
+{/* Profile Completion Bar */}
+{completionScore < 100 && (
+  <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
+    <div className="flex justify-between items-center mb-2">
+      <p className="text-sm font-semibold text-gray-700">Profile Completion</p>
+      <p className="text-sm font-bold text-ncat-blue">{completionScore}%</p>
+    </div>
+    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-full rounded-full transition-all duration-500"
+        style={{ width: `${completionScore}%`, background: 'linear-gradient(90deg, #0039A6, #FFB81C)' }} />
+    </div>
+    <p className="text-xs text-gray-400 mt-1.5">
+      {!user?.avatar && '📸 Add a profile picture · '}
+      {banners.length === 0 && '🖼️ Add a banner · '}
+      {!user?.bio && '✍️ Add a bio · '}
+      {!user?.vibeTemplate && '🔥 Set your study vibe'}
+    </p>
+  </div>
+)}
         </div>
 
         {/* Banner Slideshow */}
@@ -347,12 +347,19 @@ const fetchXP = async (token) => {
             {currentBanner ? (
               <img src={currentBanner} alt="Banner" className="w-full h-full object-cover" />
             ) : (
-              <div className="text-center text-white opacity-60">
-                <p className="text-3xl mb-1">🖼️</p>
-                <p className="text-sm font-semibold">Click to upload banner</p>
-                <p className="text-xs opacity-70 mt-1">Up to 3 images</p>
-              </div>
-            )}
+  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 relative">
+    <div className="flex flex-col items-center opacity-30">
+      <Logo size={48} />
+      <p className="text-gray-600 font-bold text-lg mt-2">Aggie StudyBuddy</p>
+    </div>
+    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+      <div className="text-center text-gray-600">
+        <p className="text-sm font-semibold">Click to upload banner</p>
+        <p className="text-xs opacity-70 mt-1">Up to 3 images</p>
+      </div>
+    </div>
+  </div>
+)}
           </div>
           <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition pointer-events-none" />
           <div className="absolute top-3 right-3 flex gap-2">

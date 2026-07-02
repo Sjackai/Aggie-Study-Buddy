@@ -181,8 +181,13 @@ export default function PublicProfile() {
             {currentBanner ? (
               <img src={currentBanner} alt="Banner" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-r from-ncat-blue to-blue-800" />
-            )}
+  <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200">
+    <div className="flex flex-col items-center opacity-30">
+      <Logo size={48} />
+      <p className="text-gray-600 font-bold text-lg mt-2">Aggie StudyBuddy</p>
+    </div>
+  </div>
+)}
           </div>
           {banners.length > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
