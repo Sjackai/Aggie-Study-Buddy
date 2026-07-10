@@ -87,7 +87,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [toast, setToast] = useState(null)
-  const [showAllAchievements, setShowAllAchievements] = useState(false)
+  const [setShowAllAchievements] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingBanner, setUploadingBanner] = useState(false)
   const [showVibeModal, setShowVibeModal] = useState(false)
@@ -108,6 +108,7 @@ export default function Profile() {
   const [form, setForm] = useState({ name: '', major: '', year: '', bio: '', isPrivate: false })
   const [xpData, setXpData] = useState(null)
   const [unlockQueue, setUnlockQueue] = useState([])
+  const [profileAchievements, setProfileAchievements] = useState([])
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
@@ -135,24 +136,25 @@ export default function Profile() {
     return () => clearInterval(interval)
   }, [user?.banners])
 
-  const fetchProfile = async (token) => {
-    try {
-      const res = await axios.get(`${API_URL}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      setUser(res.data)
-      // Check for new achievements on profile load
-const achieveRes = await axios.get(`${API_URL}/api/games/achievements`, {
-  headers: { Authorization: `Bearer ${token}` }
-})
-if (achieveRes.data.newlyUnlocked?.length > 0) {
-  setUnlockQueue(achieveRes.data.newlyUnlocked)
+const fetchProfile = async (token) => {
+  try {
+    const res = await axios.get(`${API_URL}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+    setUser(res.data)
+    setForm({ name: res.data.name || '', major: res.data.major || '', year: res.data.year || '', bio: res.data.bio || '', isPrivate: res.data.isPrivate || false })
+    setSelectedTemplate(res.data.vibeTemplate || '')
+    setSelectedFill(res.data.vibeFill || '')
+    setCustomBorderColor(res.data.borderColor || '#FFB81C')
+
+    const achieveRes = await axios.get(`${API_URL}/api/games/achievements`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (achieveRes.data.newlyUnlocked?.length > 0) {
+      setUnlockQueue(achieveRes.data.newlyUnlocked)
+    }
+    setProfileAchievements(achieveRes.data.achievements || [])
+  } catch (err) { console.error(err) }
+  setLoading(false)
 }
-      setForm({ name: res.data.name || '', major: res.data.major || '', year: res.data.year || '', bio: res.data.bio || '', isPrivate: res.data.isPrivate || false })
-      setSelectedTemplate(res.data.vibeTemplate || '')
-      setSelectedFill(res.data.vibeFill || '')
-      setCustomBorderColor(res.data.borderColor || '#FFB81C')
-    } catch (err) { console.error(err) }
-    setLoading(false)
-  }
 
   const fetchSessions = async (token) => {
     try {
@@ -289,26 +291,9 @@ const fetchXP = async (token) => {
   const currentBanner = banners[activeBanner]
   const activeTemplate = vibeTemplates.find(v => v.id === selectedTemplate)
 
-  const allAchievements = [
-    { icon: '🎓', title: 'First Session', desc: 'Created your first study session', earned: hostedSessions.length >= 1 },
-    { icon: '🤝', title: 'Team Player', desc: 'Joined 3+ study sessions', earned: joinedSessions.length >= 3 },
-    { icon: '⭐', title: 'Study Star', desc: 'Hosted 5+ sessions', earned: hostedSessions.length >= 5 },
-    { icon: '🔥', title: 'On Fire', desc: 'Hosted 10+ sessions', earned: hostedSessions.length >= 10 },
-    { icon: '📚', title: 'Scholar', desc: 'Participated in 10+ sessions', earned: joinedSessions.length >= 10 },
-    { icon: '🏆', title: 'Aggie Legend', desc: 'Hosted 20+ sessions', earned: hostedSessions.length >= 20 },
-    { icon: '🌟', title: 'Rising Star', desc: 'Joined your first session', earned: joinedSessions.length >= 1 },
-    { icon: '💪', title: 'Consistent', desc: 'Hosted 3+ sessions', earned: hostedSessions.length >= 3 },
-    { icon: '🎯', title: 'Goal Setter', desc: 'Completed onboarding', earned: true },
-    { icon: '🧠', title: 'Knowledge Sharer', desc: 'Received a Kudos tag', earned: kudosData && Object.keys(kudosData.tagCounts || {}).length > 0 },
-    { icon: '👋', title: 'Welcome Aggie', desc: 'Created your account', earned: true },
-    { icon: '🔍', title: 'Explorer', desc: 'Visited Find Sessions', earned: true },
-    { icon: '📸', title: 'Looking Good', desc: 'Uploaded a profile picture', earned: !!user?.avatar },
-    { icon: '🖼️', title: 'Banner Up', desc: 'Uploaded a profile banner', earned: banners.length > 0 },
-    { icon: '🔥', title: 'Vibe Check', desc: 'Set your study vibe status', earned: !!user?.vibeTemplate },
-    { icon: '👑', title: 'Session King', desc: 'Hosted 50+ sessions', earned: hostedSessions.length >= 50 },
-  ]
+  
 
-  const displayedAchievements = showAllAchievements ? allAchievements : allAchievements.slice(0, 6)
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -627,15 +612,20 @@ const fetchXP = async (token) => {
   </button>
 </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {displayedAchievements.map((achievement, i) => (
-              <div key={i} className={`p-4 rounded-xl border text-center transition ${achievement.earned ? 'border-ncat-gold bg-yellow-50' : 'border-gray-100 bg-gray-50 opacity-50'}`}>
-                <div className="text-3xl mb-2">{achievement.icon}</div>
-                <p className={`font-bold text-sm mb-1 ${achievement.earned ? 'text-ncat-blue' : 'text-gray-400'}`}>{achievement.title}</p>
-                <p className="text-xs text-gray-400">{achievement.desc}</p>
-                {achievement.earned && <span className="inline-block mt-2 bg-ncat-gold text-ncat-blue text-xs font-bold px-2 py-0.5 rounded-full">Earned!</span>}
-              </div>
-            ))}
-          </div>
+  {profileAchievements.filter(a => a.earned).slice(0, 6).map((achievement, i) => (
+    <div key={i} className="p-4 rounded-xl border text-center border-ncat-gold bg-yellow-50">
+      <div className="text-3xl mb-2">{achievement.icon}</div>
+      <p className="font-bold text-sm mb-1 text-ncat-blue">{achievement.name}</p>
+      <p className="text-xs text-gray-400">{achievement.description}</p>
+      <span className="inline-block mt-2 bg-ncat-gold text-ncat-blue text-xs font-bold px-2 py-0.5 rounded-full">Earned!</span>
+    </div>
+  ))}
+  {profileAchievements.filter(a => a.earned).length === 0 && (
+    <div className="col-span-3 text-center py-8">
+      <p className="text-gray-400 text-sm">No achievements yet — start earning! 🐾</p>
+    </div>
+  )}
+</div>
         </div>
 
         {/* Recent Sessions */}

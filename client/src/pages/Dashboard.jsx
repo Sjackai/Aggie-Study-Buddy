@@ -88,10 +88,22 @@ axios.get(`${API_URL}/api/users/me`, {
   setUser(res.data)
   localStorage.setItem('user', JSON.stringify(res.data))
 }).catch(err => console.error(err))
-    fetchMySessions(token, JSON.parse(stored).id)
+fetchMySessions(token, JSON.parse(stored).id)
     checkKudosEligible(token)
     fetchNotifications(token)
     fetchRecommended(token)
+
+    const params = new URLSearchParams(window.location.search)
+    const showQRId = params.get('showQR')
+    if (showQRId) {
+      setTimeout(() => {
+        setMySessions(prev => {
+          const session = [...prev.upcoming, ...prev.past].find(s => s.id === showQRId)
+          if (session) setQrModal(session)
+          return prev
+        })
+      }, 1500)
+    }
     const interval = setInterval(() => {
       fetchNotifications(token)
     }, 10000)
@@ -853,7 +865,7 @@ useEffect(() => {
         <div className="py-8">
           <p className="text-4xl mb-3">⏰</p>
           <p className="text-gray-600 font-semibold mb-2">{qrError}</p>
-          <p className="text-gray-400 text-xs">QR is available 30 minutes before your session starts</p>
+          <p className="text-gray-400 text-xs">QR is available 6 hours before your session starts</p>
         </div>
       ) : qrImage ? (
         <>

@@ -54,6 +54,9 @@ export default function Messages() {
   const currentUser = JSON.parse(localStorage.getItem('user'))
   const directPollRef = useRef(null)
   const groupPollRef = useRef(null)
+  const [showQRModal, setShowQRModal] = useState(false)
+const [qrImage, setQrImage] = useState(null)
+const [qrError, setQrError] = useState('')
 
   const fetchAttendance = async (sessionId) => {
     const token = localStorage.getItem('token')
@@ -66,7 +69,19 @@ export default function Messages() {
       console.error(err)
     }
   }
-
+const fetchQR = async (sessionId) => {
+  const token = localStorage.getItem('token')
+  setQrError('')
+  setQrImage(null)
+  try {
+    const res = await axios.get(`${API_URL}/api/sessions/${sessionId}/qr`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    setQrImage(res.data.qrImage)
+  } catch (err) {
+    setQrError(err.response?.data?.error || 'Failed to load QR code')
+  }
+}
   const showToast = (message, type = 'success') => {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3000)
@@ -628,15 +643,22 @@ export default function Messages() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => { fetchAttendance(selectedGroupChat.sessionId); setShowAttendance(true) }}
-                      className="bg-blue-50 text-ncat-blue text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-blue-100 transition">
-                      📋 Attendance
-                    </button>
-                    <button onClick={() => setLeaveGroupConfirm(selectedGroupChat)} className="text-red-400 hover:text-red-600 text-sm font-semibold transition">
-                      Leave
-                    </button>
-                  </div>
+  {selectedGroupChat?.session?.hostId === currentUser?.id && (
+    <button
+      onClick={() => { setShowQRModal(true); fetchQR(selectedGroupChat.sessionId) }}
+      className="bg-ncat-blue text-white text-xs font-bold px-3 py-1.5 rounded-xl hover:opacity-90 transition">
+      📱 QR
+    </button>
+  )}
+  <button
+    onClick={() => { fetchAttendance(selectedGroupChat.sessionId); setShowAttendance(true) }}
+    className="bg-blue-50 text-ncat-blue text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-blue-100 transition">
+    📋 Attendance
+  </button>
+  <button onClick={() => setLeaveGroupConfirm(selectedGroupChat)} className="text-red-400 hover:text-red-600 text-sm font-semibold transition">
+    Leave
+  </button>
+</div>
                 </div>
 
                 {/* Member avatars row */}
@@ -703,7 +725,43 @@ export default function Messages() {
           ) : null}
         </div>
       </div>
-
+{/* QR Modal in Group Chat */}
+{showQRModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 px-4">
+    <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center">
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-lg font-bold text-ncat-blue">{selectedGroupChat?.name} Check-In</h2>
+          <p className="text-xs text-gray-400">{selectedGroupChat?.session?.location || ''}</p>
+        </div>
+        <button onClick={() => { setShowQRModal(false); setQrImage(null); setQrError('') }}
+          className="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+      </div>
+      {qrError ? (
+        <div className="py-8">
+          <p className="text-4xl mb-3">⏰</p>
+          <p className="text-gray-600 font-semibold mb-2">{qrError}</p>
+          <p className="text-gray-400 text-xs">QR is available 6 hours before your session starts</p>
+        </div>
+      ) : qrImage ? (
+        <>
+          <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+            <img src={qrImage} alt="QR Code" className="w-full max-w-xs mx-auto" />
+          </div>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <p className="text-xs text-green-600 font-semibold">QR refreshes every 30 seconds</p>
+          </div>
+          <p className="text-xs text-gray-400">Show this to your study group members to check in</p>
+        </>
+      ) : (
+        <div className="py-8">
+          <p className="text-gray-400 text-sm">Loading QR code...</p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
       {/* Attendance Modal */}
       {showAttendance && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
@@ -716,9 +774,27 @@ export default function Messages() {
               <div className="text-center py-8">
                 <p className="text-gray-400 text-sm">Loading attendance...</p>
               </div>
-            ) : (
+           ) : (
               <>
                 <div className="space-y-3">
+                  {/* Host */}
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 ${getColor(selectedGroupChat?.session?.host?.name || 'H')} rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden`}>
+                        {selectedGroupChat?.session?.host?.avatar
+                          ? <img src={selectedGroupChat.session.host.avatar} alt="" className="w-full h-full object-cover" />
+                          : getInitials(selectedGroupChat?.session?.host?.name || 'H')}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{selectedGroupChat?.session?.host?.name || 'Host'}</p>
+                        <p className="text-xs text-ncat-blue font-bold">Host</p>
+                      </div>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${attendanceData.hostAttended ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                      {attendanceData.hostAttended ? '✅ Present' : '⏳ Not yet'}
+                    </span>
+                  </div>
+                  {/* Members */}
                   {attendanceData.members.map(member => (
                     <div key={member.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
@@ -736,8 +812,8 @@ export default function Messages() {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 text-center mt-4">
-                  {attendanceData.members.filter(m => m.attended).length} / {attendanceData.members.length} checked in
+               <p className="text-xs text-gray-400 text-center mt-4">
+                  {attendanceData.members.filter(m => m.attended).length + (attendanceData.hostAttended ? 1 : 0)} / {attendanceData.members.length + 1} checked in
                 </p>
               </>
             )}
