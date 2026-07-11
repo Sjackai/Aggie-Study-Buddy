@@ -37,11 +37,10 @@ router.post('/', authMiddleware, async (req, res) => {
 
 // Validate date is not more than 7 days out
 const today = new Date()
-today.setHours(0, 0, 0, 0)
-const sessionDate = new Date(date)
-sessionDate.setHours(0, 0, 0, 0)
+today.setUTCHours(0, 0, 0, 0)
+const sessionDate = new Date(date + 'T00:00:00Z')
 const daysDiff = Math.floor((sessionDate - today) / (1000 * 60 * 60 * 24))
-if (daysDiff < 0) return res.status(400).json({ error: 'Session date cannot be in the past' })
+if (daysDiff < -1) return res.status(400).json({ error: 'Session date cannot be in the past' })
 if (daysDiff > 7) return res.status(400).json({ error: 'Sessions can only be created up to 7 days in advance' })
 
 const session = await prisma.session.create({

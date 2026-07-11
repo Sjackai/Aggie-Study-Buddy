@@ -141,7 +141,7 @@ export default function DailyTrivia() {
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {[
                   { label: 'Questions', value: trivia?.totalQuestions, emoji: '❓' },
-                  { label: 'Time each', value: '30s', emoji: '⏱️' },
+                  { label: 'Time each', value: '7s', emoji: '⏱️' },
                   { label: 'Max XP', value: `${trivia?.totalQuestions * 10 + 50}`, emoji: '⚡' },
                 ].map((s, i) => (
                   <div key={i} className="bg-gray-50 rounded-2xl p-3 text-center">
@@ -175,12 +175,12 @@ export default function DailyTrivia() {
             {/* Timer */}
             <div className={`rounded-2xl p-3 flex items-center justify-between ${timeLeft <= 8 ? 'bg-red-500' : 'bg-white bg-opacity-10 border border-white border-opacity-20'} text-white`}>
               <span className="font-bold text-sm">⏱️ Time</span>
-              <span className={`text-2xl font-bold ${timeLeft <= 8 ? 'animate-pulse' : ''}`}>{timeLeft}s</span>
+              <span className={`text-2xl font-bold ${timeLeft <= 3 ? 'animate-pulse' : ''}`}>{timeLeft}s</span>
             </div>
 
             <div className="h-1.5 bg-white bg-opacity-20 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-1000 ${timeLeft <= 8 ? 'bg-red-400' : 'bg-ncat-gold'}`}
+                className={`h-full rounded-full transition-all duration-1000 ${timeLeft <= 3 ? 'bg-red-400' : 'bg-ncat-gold'}`}
                 style={{ width: `${(timeLeft / 30) * 100}%` }}
               />
             </div>
@@ -239,24 +239,31 @@ export default function DailyTrivia() {
             </div>
 
             {/* Answer breakdown */}
-            {result?.results && (
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="font-bold text-ncat-blue mb-4">Answer Breakdown</h3>
-                <div className="space-y-2">
-                  {result.results.map((r, i) => (
-                    <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${r.isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
-                      <span>{r.isCorrect ? '✅' : '❌'}</span>
-                      <span className="text-sm font-semibold text-gray-700">Question {i + 1}</span>
-                      {!r.isCorrect && (
-                        <span className="text-xs text-gray-400 ml-auto">
-                          Correct: {['A', 'B', 'C', 'D'][r.correctIndex]}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+{result?.results && trivia?.questions && (
+  <div className="bg-white rounded-2xl shadow-sm p-6">
+    <h3 className="font-bold text-ncat-blue mb-4">Answer Breakdown</h3>
+    <div className="space-y-3">
+      {result.results.map((r, i) => (
+        <div key={i} className={`p-4 rounded-xl ${r.isCorrect ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'}`}>
+          <div className="flex items-start gap-2 mb-2">
+            <span className="flex-shrink-0">{r.isCorrect ? '✅' : '❌'}</span>
+            <p className="text-sm font-semibold text-gray-800">{trivia.questions[i]?.question}</p>
+          </div>
+          {!r.isCorrect && (
+            <div className="ml-6 space-y-1">
+              <p className="text-xs text-red-500">
+                Your answer: {trivia.questions[i]?.options[r.yourAnswer] || 'No answer (timed out)'}
+              </p>
+              <p className="text-xs text-green-600 font-semibold">
+                Correct: {trivia.questions[i]?.options[r.correctIndex]}
+              </p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
             <button onClick={() => navigate('/games')} className="w-full bg-ncat-gold text-ncat-blue font-bold py-4 rounded-2xl hover:opacity-90 transition shadow-md">
               Back to Hub 🎮

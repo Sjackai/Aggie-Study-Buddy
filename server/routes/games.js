@@ -19,10 +19,13 @@ router.get('/current', async (req, res) => {
 // GET LEADERBOARD
 router.get('/leaderboard', authMiddleware, async (req, res) => {
   try {
-    const { type = 'alltime' } = req.query
+    const { type = 'alltime-xp' } = req.query
+
+    let orderBy = { totalXP: 'desc' }
+    if (type.includes('wins')) orderBy = { gamesWon: 'desc' }
 
     const leaderboard = await prisma.userXP.findMany({
-      orderBy: { totalXP: 'desc' },
+      orderBy,
       take: 20,
       include: {
         user: {
@@ -48,7 +51,6 @@ router.get('/leaderboard', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch leaderboard' })
   }
 })
-
 // GET MY XP
 router.get('/my-xp', authMiddleware, async (req, res) => {
   try {
